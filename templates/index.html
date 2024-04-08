@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor X</title>
+
+    <style>
+        #progressBar {
+            width: 100%;
+            background-color: #ddd;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #4CAF50; /* Green */
+        }
+    </style>
+    
+</head>
+<body>
+    <h1>YouTube內容擷取工具</h1>
+    <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址">
+    <button onclick="fetchHighlights()">擷取重點</button>
+
+    <div id="transcription"></div>
+    <div id="summary"></div>
+    <div id="progressBar" style="display:none;">處理中...</div>
+
+
+    <script>
+function fetchHighlights() {
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.display = 'block'; // 顯示進度條
+
+    const url = document.getElementById('youtubeUrl').value;
+    fetch('/process_video', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ youtubeUrl: url }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('transcription').textContent = data.transcription;
+        document.getElementById('summary').textContent = data.summary;
+        progressBar.style.display = 'none'; // 隱藏進度條
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        progressBar.style.display = 'none'; // 發生錯誤時也要隱藏進度條
+    });
+}
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# app.yaml
+
+runtime: python39
+entrypoint: gunicorn -b :$PORT main:app
+
+instance_class: F1
+
+handlers:
+- url: /.*
+  script: auto
