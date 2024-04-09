@@ -2,3 +2,5 @@
 .gcloudignore
 *.mp3
 /ssh
+__pycache__/
+*.pyc
