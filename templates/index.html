@@ -54,6 +54,11 @@ function fetchHighlights() {
         document.getElementById('transcription').textContent = data.transcription;
         document.getElementById('summary').textContent = data.summary;
         progressBar.style.display = 'none'; // 隱藏進度條
+
+        // 將結果存儲到localStorage
+        localStorage.setItem('transcription', data.transcription);
+        localStorage.setItem('summary', data.summary);
+        
     })
     .catch(error => {
         console.error('Error:', error);
@@ -61,6 +66,18 @@ function fetchHighlights() {
     });
 }
 
+// 頁面加載時從localStorage讀取數據
+document.addEventListener('DOMContentLoaded', function() {
+    const storedTranscription = localStorage.getItem('transcription');
+    const storedSummary = localStorage.getItem('summary');
+
+    if (storedTranscription) {
+        document.getElementById('transcription').textContent = storedTranscription;
+    }
+    if (storedSummary) {
+        document.getElementById('summary').textContent = storedSummary;
+    }
+});
     </script>
 </body>
 </html>
