@@ -15,6 +15,9 @@ load_dotenv()
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
+headers = {
+    "Authorization": f"Bearer {api_key}"
+}
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
@@ -59,7 +62,7 @@ def segment_audio(filename, segment_length_minutes):
         segments.append(segment_filename)  # 將檔案路徑加入列表
         start += segment_length_ms
         part += 1
-        
+
     os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
 
     return segments  # 返回分段檔案的路徑列表

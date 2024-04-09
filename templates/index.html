@@ -15,6 +15,14 @@
             color: #fff;
             background-color: #4CAF50; /* Green */
         }
+        .content-container {
+            display: flex; /* 使用Flexbox */
+            justify-content: space-between; /* 子元素平均分布在容器中 */
+            padding: 20px; /* 加點內距使版面看起來更寬敞 */
+        }
+        .content-container > div {
+            width: 48%; /* 設定子元素寬度，留下一些空間避免貼合 */
+        }
     </style>
     
 </head>
