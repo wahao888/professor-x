@@ -12,8 +12,10 @@ CORS(app)
 
 load_dotenv() 
 
+# 從環境變量中獲取 API 金鑰
+api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key=api_key,
 )
 headers = {
     "Authorization": f"Bearer {api_key}"
