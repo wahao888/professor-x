@@ -47,9 +47,6 @@ def download_youtube_audio_as_mp3(youtube_url):
 def segment_audio(filename, segment_length_minutes):
     segment_length_ms = segment_length_minutes * 60 * 1000
     audio = AudioSegment.from_file(filename)
-    today = datetime.now().strftime("%Y%m%d")
-    
-    total_segments = len(audio) // segment_length_ms + (1 if len(audio) % segment_length_ms > 0 else 0)
     
     segments = []
     start = 0
@@ -62,7 +59,9 @@ def segment_audio(filename, segment_length_minutes):
         segments.append(segment_filename)  # 將檔案路徑加入列表
         start += segment_length_ms
         part += 1
-    
+        
+    os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
+
     return segments  # 返回分段檔案的路徑列表
 
 # 音訊轉文字
@@ -76,6 +75,7 @@ def transcribe_audio(segment_files):
                 file=audio_file,
                 )
                 transcriptions.append(transcription.text)
+            os.remove(filename) # 刪除處理過的音訊檔案
         except FileNotFoundError:
             print(f"檔案 {filename} 不存在。")
         except Exception as e:
