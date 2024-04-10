@@ -1,11 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Professor X</title>
 
     <style>
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            height: 100vh;
+
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4; /* 莫蘭迪灰作為背景色 */
+            color: #606060; /* 莫蘭迪深灰作為文字顏色 */
+            margin: 0;
+            padding: 20px;
+        }
+        #googleUser {
+            position: absolute;
+            top: 15px;
+            right: 40px;
+            font-size: 16px;
+        }
         #progressBar {
             width: 100%;
             background-color: #ddd;
@@ -13,71 +32,162 @@
             padding: 10px;
             font-weight: bold;
             color: #fff;
-            background-color: #4CAF50; /* Green */
+            background-color: #9e9e9e; /* 淡莫蘭迪綠 */
         }
+        .transcription-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #ffffff; /* 純白背景 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
+            border-radius: 10px; /* 圓角 */
+            margin-bottom: 20px;
+        }
+
         .content-container {
-            display: flex; /* 使用Flexbox */
-            justify-content: space-between; /* 子元素平均分布在容器中 */
-            padding: 20px; /* 加點內距使版面看起來更寬敞 */
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            min-height: 77vh;
+            background-color: #ffffff; /* 純白背景 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
+            border-radius: 10px; /* 圓角 */
+            margin-bottom: 20px;
         }
         .content-container > div {
-            width: 48%; /* 設定子元素寬度，留下一些空間避免貼合 */
+            width: 48%;
+            padding: 10px;
         }
-    </style>
-    
-</head>
-<body>
-    <h1>YouTube內容擷取工具</h1>
-    <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址">
-    <button onclick="fetchHighlights()">擷取重點</button>
-
-    <div id="transcription"></div>
-    <div id="summary"></div>
-    <div id="progressBar" style="display:none;">處理中...</div>
-
-
-    <script>
-function fetchHighlights() {
-    const progressBar = document.getElementById('progressBar');
-    progressBar.style.display = 'block'; // 顯示進度條
-
-    const url = document.getElementById('youtubeUrl').value;
-    fetch('/process_video', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ youtubeUrl: url }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('transcription').textContent = data.transcription;
-        document.getElementById('summary').textContent = data.summary;
-        progressBar.style.display = 'none'; // 隱藏進度條
-
-        // 將結果存儲到localStorage
-        localStorage.setItem('transcription', data.transcription);
-        localStorage.setItem('summary', data.summary);
+        .list-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            min-height: 95vh; /* 視口高度（viewport height）的百分比 */
+            background-color: #ffffff; /* 純白背景 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
+            border-radius: 10px; /* 圓角 */
+            margin-bottom: 10px; /* 元素底部的外邊距 */
+        }
+        .input-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #ffffff; /* 純白背景 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
+            border-radius: 10px; /* 圓角 */
+            margin-bottom: 20px;
+        }
         
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        progressBar.style.display = 'none'; // 發生錯誤時也要隱藏進度條
-    });
-}
+        .input-container input {
+            flex-grow: 1; /* 讓輸入框佔據大部分空間 */
+            margin-right: 20px;
+        }
+        button {
+            background-color: #808080; /* 莫蘭迪藍 */
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #666666;
+        }
+        #transcriptionList {
+            width: 25%;
+            float: left;
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        #transcriptionContent {
+            width: 75%;
+            float: right;
+            padding: 20px; 
+            box-sizing: border-box;
+        }
 
-// 頁面加載時從localStorage讀取數據
-document.addEventListener('DOMContentLoaded', function() {
-    const storedTranscription = localStorage.getItem('transcription');
-    const storedSummary = localStorage.getItem('summary');
+    </style>
 
-    if (storedTranscription) {
-        document.getElementById('transcription').textContent = storedTranscription;
-    }
-    if (storedSummary) {
-        document.getElementById('summary').textContent = storedSummary;
-    }
-});
+  </head>
+  <body>
+
+    <div class="main-container">
+        <div id="transcriptionList">
+            <div class="list-container">
+                <h3>我的內容</h3>
+            </div>
+        </div>
+
+        <div id="transcriptionContent">
+            <div class="transcription-container">
+                <div id="googleUser">歡迎，{{ user_name }}！</div>
+                <h1>YouTube內容擷取工具</h1>
+            </div>
+            <div class="input-container">
+                <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
+                <button onclick="fetchHighlights()">音訊轉文字</button>
+            </div>
+
+            <div class="content-container">
+                <div id="transcription-section" style="margin-right: 2%">
+                    <h2>音訊內容</h2>
+                    <div id="transcription">轉寫內容將顯示在這裡</div>
+                </div>
+                <div id="summary-section" style="margin-left: 2%">
+                    <h2>內容摘要</h2>
+                    <div id="summary">摘要內容將顯示在這裡</div>
+                </div>
+            </div>
+
+            <div id="progressBar" style="display: none">處理中...</div>
+        </div>
+    </div>
+    
+    
+    
+    <script>
+      function fetchHighlights() {
+        const progressBar = document.getElementById("progressBar");
+        progressBar.style.display = "block"; // 顯示進度條
+
+        const url = document.getElementById("youtubeUrl").value;
+        fetch("/process_video", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ youtubeUrl: url }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("transcription").textContent =
+              data.transcription;
+            document.getElementById("summary").textContent = data.summary;
+            progressBar.style.display = "none"; // 隱藏進度條
+
+            // 將結果存儲到localStorage
+            localStorage.setItem("transcription", data.transcription);
+            localStorage.setItem("summary", data.summary);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            progressBar.style.display = "none"; // 發生錯誤時也要隱藏進度條
+          });
+      }
+
+      // 頁面加載時從localStorage讀取數據
+      document.addEventListener("DOMContentLoaded", function () {
+        const storedTranscription = localStorage.getItem("transcription");
+        const storedSummary = localStorage.getItem("summary");
+
+        if (storedTranscription) {
+          document.getElementById("transcription").textContent =
+            storedTranscription;
+        }
+        if (storedSummary) {
+          document.getElementById("summary").textContent = storedSummary;
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

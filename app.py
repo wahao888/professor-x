@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 import yt_dlp
 from pydub import AudioSegment
 import os
@@ -9,9 +9,12 @@ from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
 from pymongo import MongoClient
 import certifi
-
+import re
+from flask_dance.contrib.google import make_google_blueprint, google
+from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 CORS(app)
 
 # 設定mongoDB
@@ -71,16 +74,46 @@ def test_mongo_read():
 
 
 
-load_dotenv() 
 
-# 從環境變量中獲取 API 金鑰
-api_key = os.environ.get("OPENAI_API_KEY")
-client = OpenAI(
-    api_key=api_key,
-)
-headers = {
-    "Authorization": f"Bearer {api_key}"
-}
+@app.route("/")
+def index():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+    
+    try:
+        resp = google.get("/oauth2/v1/userinfo")
+        if resp.ok:
+            userinfo = resp.json()
+            print("userinfo:",userinfo)
+
+            google_id = userinfo.get("id")
+            name = userinfo.get("name")
+            
+            # 構建要存儲的用戶信息字典，包括令牌
+            user_info_to_store = {
+                "google_id": google_id,  # Google ID
+                "name": name,  # 使用者名稱
+            }
+
+            # 檢查數據庫是否已有該使用者
+            existing_user = users_db.find_one({"google_id": google_id})
+            if existing_user:
+                # 如果使用者已存在，更新其資訊和令牌
+                users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
+            else:
+                # 如果使用者不存在，創建新使用者
+                users_db.insert_one(user_info_to_store)
+
+        else:
+            return "無法獲取使用者資訊", 500
+    except TokenExpiredError:
+        return redirect(url_for("google.login"))  # 引導用戶重新登入
+    
+    return render_template('index.html', user_name=name)
+
+
+
+
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
@@ -161,9 +194,6 @@ def summarize_text(text):
     )
     return response.choices[0].message.content
 
-@app.route('/')
-def home():
-    return render_template('index.html')
 
 # API
 @app.route('/process_video', methods=['POST'])
@@ -171,22 +201,31 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
     segment_files = download_youtube_audio_as_mp3(youtube_url)
-    transcription = transcribe_audio(segment_files)
+    transcription = transcribe_audio(segment_files).replace(" ", "\n")
     summary = summarize_text(transcription)
+
+    # 處理重點整理換行
+    summary = "\n" + summary  # 在開頭添加換行符，以處理首個條目
+    summary = re.sub(r"\n(\d+\.)", r"\n\1", summary)  # 在每個數字點前加上換行符
+    summary = summary.lstrip("\n")  # 移除開頭多餘的換行符
 
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     # user_id = get_logged_in_user_id() # 獲取user_id
 
     content_data = {
-        # "user_id": user_id,
-        # "category_id": category_id,
+        "user_id": "user_id", # 暫時沒有用戶ID
+        "file_name": segment_files,
+        "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
         "summary": summary,
         "shared": share,
         "timestamp": datetime.now()
     }
-    db.contents.insert_one(content_data)
+    try:
+        content_db.insert_one(content_data)
+    except Exception as e:
+        print({"success": False, "message": str(e)})
 
     return jsonify({'transcription': transcription, 'summary': summary})
 
@@ -206,4 +245,6 @@ def get_contents_by_category(category_id):
 
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
+
+
