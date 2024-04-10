@@ -23,6 +23,30 @@ client = MongoClient(uri, tlsCAFile=ca)
 # 獲取資料庫和集合
 db = client['myDatabase'] 
 test_collection = db['test_collection']
+content_db = db["contents"]
+google_db = db["google_login"]
+users_db = db['users']
+
+
+# 設置google login
+google_bp = make_google_blueprint(
+    client_id=os.getenv("client_id"),
+    client_secret=os.getenv("client_secret"),
+    redirect_to="index",
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+
+# 從環境變量中獲取 API 金鑰
+load_dotenv() 
+api_key = os.environ.get("OPENAI_API_KEY")
+client = OpenAI(
+    api_key=api_key,
+)
+headers = {
+    "Authorization": f"Bearer {api_key}"
+}
+
 
 # 測試連線mongoDB
 @app.route('/test_mongo_write', methods=['GET'])
