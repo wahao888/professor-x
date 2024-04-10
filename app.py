@@ -150,7 +150,35 @@ def process_video():
     transcription = transcribe_audio(segment_files)
     summary = summarize_text(transcription)
 
+    # category_id = data.get('categoryId') # 分類
+    share = data.get('share', False)  # 預設不分享
+    # user_id = get_logged_in_user_id() # 獲取user_id
+
+    content_data = {
+        # "user_id": user_id,
+        # "category_id": category_id,
+        "transcription": transcription,
+        "summary": summary,
+        "shared": share,
+        "timestamp": datetime.now()
+    }
+    db.contents.insert_one(content_data)
+
     return jsonify({'transcription': transcription, 'summary': summary})
+
+
+# 讓使用者根據分類檢索內容
+@app.route('/contents/<category_id>', methods=['GET'])
+def get_contents_by_category(category_id):
+    contents = db.contents.find({"category_id": category_id, "shared": True})
+    results = []
+    for content in contents:
+        results.append({
+            "transcription": content["transcription"],
+            "summary": content["summary"],
+            "timestamp": content["timestamp"]
+        })
+    return jsonify(results)
 
 
 if __name__ == '__main__':
