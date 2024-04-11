@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import yt_dlp
 from pydub import AudioSegment
 import os
@@ -51,30 +51,6 @@ headers = {
 }
 
 
-# 測試連線mongoDB
-@app.route('/test_mongo_write', methods=['GET'])
-def test_mongo_write():
-    try:
-        # 嘗試寫入一筆數據到MongoDB的"test_collection"集合中
-        test_data = {"message": "Hello, MongoDB!", "timestamp": datetime.now()}
-        test_collection.insert_one(test_data)
-        return jsonify({"success": True, "message": "Data written to MongoDB successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/test_mongo_read', methods=['GET'])
-def test_mongo_read():
-    try:
-        # 嘗試從MongoDB的"test_collection"集合中讀取所有數據
-        data = test_collection.find()
-        result = [{"message": item["message"], "timestamp": item["timestamp"]} for item in data]
-        return jsonify({"success": True, "data": result})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-
-
-
 @app.route("/")
 def index():
     if not google.authorized:
@@ -103,6 +79,8 @@ def index():
             else:
                 # 如果使用者不存在，創建新使用者
                 users_db.insert_one(user_info_to_store)
+
+            session['google_id'] = google_id
 
         else:
             return "無法獲取使用者資訊", 500
@@ -215,11 +193,12 @@ def process_video():
 
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
-    # user_id = get_logged_in_user_id() # 獲取user_id
+    google_id = session.get('google_id') # 獲取使用者的Google ID
 
     content_data = {
-        "user_id": "user_id", # 暫時沒有用戶ID
-        "file_name": segment_files,
+        "google_id": google_id,
+        "file_name": segment_files[0][:5],
+        "url": youtube_url,
         "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
         "summary": summary,
@@ -232,6 +211,36 @@ def process_video():
         print({"success": False, "message": str(e)})
 
     return jsonify({'transcription': transcription, 'summary': summary})
+
+
+@app.route('/get_video_content', methods=['POST'])
+def get_video_content():
+    data = request.json
+    youtube_url = data.get('youtubeUrl')
+    google_id = session.get('google_id')
+    content = content_db.find_one({"url": youtube_url, "google_id": google_id})
+    if content:
+        return jsonify({
+            "success": True,
+            "transcription": content["transcription"],
+            "summary": content["summary"]
+        })
+    else:
+        return jsonify({"success": False, "message": "Content not found."}), 404
+
+
+@app.route('/get_user_contents', methods=['GET'])
+def get_user_contents():
+    google_id = session.get('google_id')
+    if not google_id:
+        return jsonify({"success": False, "message": "未授權的訪問"}), 401
+
+    contents = content_db.find({"google_id": google_id}).sort("timestamp", -1)
+    content_list = [{"file_name": content["file_name"], "url": content["url"], "timestamp": content["timestamp"]} for content in contents]
+    
+    return jsonify({"success": True, "contents": content_list})
+
+
 
 
 # 讓使用者根據分類檢索內容
@@ -252,3 +261,5 @@ if __name__ == '__main__':
     app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
 
 
+# 開發階段不使用HTTPS，終端機輸入：
+# export OAUTHLIB_INSECURE_TRANSPORT=1 

@@ -61,7 +61,8 @@
         }
         .list-container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column; /* 使子元素垂直排列 */
+            align-items: flex-start; /* 確保子元素在橫向上靠左對齊 */
             padding: 20px;
             min-height: 95vh; /* 視口高度（viewport height）的百分比 */
             background-color: #ffffff; /* 純白背景 */
@@ -107,17 +108,26 @@
             box-sizing: border-box;
             
         }
-
+        .tag {
+          display: block; /* 確保每個標籤都是塊級元素 */
+          padding: 10px;
+          margin-bottom: 10px;
+          background-color: #e0e0e0; /* 淺灰色背景 */
+          border-radius: 5px; /* 圓角 */
+          cursor: pointer; /* 鼠標懸停時顯示手型光標 */
+      }
+      .tag:hover {
+          background-color: #d0d0d0; /* 鼠標懸停時的背景色 */
+      }
     </style>
 
   </head>
   <body>
 
     <div class="main-container">
-        <div id="transcriptionList">
-            <div class="list-container">
+      <div id="transcriptionList" class="list-container">
                 <h3>我的內容</h3>
-            </div>
+                <div id="tagsContainer"></div>
         </div>
 
         <div id="transcriptionContent">
@@ -128,10 +138,11 @@
             <div class="input-container">
                 <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
                 <button onclick="fetchHighlights()">音訊轉文字</button>
-                <div id="progressBar" style="display: none">處理中...</div>
-            </div>
-
-            <div class="content-container">
+                <button onclick="test_create_tag()">測試產生標籤</button>
+              </div>
+              
+              <div class="content-container">
+              <div id="progressBar" style="display: none">處理中...</div>
                 <div id="transcription-section" style="margin-right: 2%">
                     <h2>音訊內容</h2>
                     <div id="transcription">轉寫內容將顯示在這裡</div>
@@ -168,6 +179,22 @@
             document.getElementById("summary").textContent = data.summary;
             progressBar.style.display = "none"; // 隱藏進度條
 
+            // 創建新標籤並添加到左側列表
+            const tagsContainer = document.getElementById("tagsContainer");
+            const newTag = document.createElement("div");
+            newTag.textContent = data.file_name;
+            newTag.setAttribute("url", url); // 使用YouTube URL作為示例唯一標識
+            newTag.className = "tag";
+            newTag.onclick = function() {
+              displayVideoContent(this.getAttribute("url"));
+            };
+            // 將新標籤插入到容器的最前面
+            if (tagsContainer.firstChild) {
+                tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
+            } else {
+                tagsContainer.appendChild(newTag);
+            }
+
             // 將結果存儲到localStorage
             localStorage.setItem("transcription", data.transcription);
             localStorage.setItem("summary", data.summary);
@@ -178,6 +205,23 @@
           });
       }
 
+      let tagCount = 0;
+      function test_create_tag() {
+        tagCount += 1;
+    
+        const tagsContainer = document.getElementById("tagsContainer");
+        const newTag = document.createElement("div");
+        newTag.textContent = `測試標籤 ${tagCount}`;
+        newTag.className = "tag";
+    
+        // 將新標籤插入到容器的最前面
+        if (tagsContainer.firstChild) {
+            tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
+        } else {
+            tagsContainer.appendChild(newTag);
+        }
+    }
+      
       // 頁面加載時從localStorage讀取數據
       document.addEventListener("DOMContentLoaded", function () {
         const storedTranscription = localStorage.getItem("transcription");
@@ -191,6 +235,34 @@
           document.getElementById("summary").textContent = storedSummary;
         }
       });
+
+
+      // 點擊標籤顯示相應的影片內容
+      function displayVideoContent(url) {
+        // 向後端發送請求，獲取影片內容
+        fetch("/get_video_content", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ youtubeUrl: url }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // 如果找到了資料，則顯示在頁面上
+            document.getElementById("transcription").textContent = data.transcription;
+            document.getElementById("summary").textContent = data.summary;
+          } else {
+            // 如果沒有找到對應的資料或發生錯誤
+            console.error("Error:", data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+      }
+
     </script>
   </body>
 </html>
