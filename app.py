@@ -108,7 +108,7 @@ def download_youtube_audio_as_mp3(youtube_url):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=False)
-        video_title = info.get('title', 'DownloadedAudio')[:5]  # 獲取標題的前五個字元
+        video_title = info.get('title', 'DownloadedAudio')[:10]  # 獲取標題的前10個字元
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")  # 獲取當前時間戳
         # 結合影片標題的前五個字元與時間戳作為檔案名
         final_filename = f"{video_title}_{current_time}"
@@ -131,7 +131,7 @@ def segment_audio(filename, segment_length_minutes):
     while start < len(audio):
         end = start + segment_length_ms
         segment = audio[start:end]
-        segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3"
+        segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3" # [:-4]移除檔案擴展名
         segment.export(segment_filename, format="mp3")
         segments.append(segment_filename)  # 將檔案路徑加入列表
         start += segment_length_ms
@@ -152,7 +152,6 @@ def transcribe_audio(segment_files):
                 file=audio_file,
                 )
                 transcriptions.append(transcription.text)
-                print(f'transcribe_audio: {transcription.usage.prompt_tokens} prompt tokens used.')
 
             os.remove(filename) # 刪除處理過的音訊檔案
         except FileNotFoundError:
@@ -197,7 +196,7 @@ def process_video():
 
     content_data = {
         "google_id": google_id,
-        "file_name": segment_files[0][:5],
+        "file_name": segment_files[0][:10],
         "url": youtube_url,
         "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
@@ -213,6 +212,7 @@ def process_video():
     return jsonify({'transcription': transcription, 'summary': summary})
 
 
+# 點擊標籤顯示內容
 @app.route('/get_video_content', methods=['POST'])
 def get_video_content():
     data = request.json
@@ -229,11 +229,12 @@ def get_video_content():
         return jsonify({"success": False, "message": "Content not found."}), 404
 
 
+# 頁面加載時取得用戶標籤
 @app.route('/get_user_contents', methods=['GET'])
 def get_user_contents():
     google_id = session.get('google_id')
     if not google_id:
-        return jsonify({"success": False, "message": "未授權的訪問"}), 401
+        return jsonify({"success": False, "message": "尚未有內容"}), 401
 
     contents = content_db.find({"google_id": google_id}).sort("timestamp", -1)
     content_list = [{"file_name": content["file_name"], "url": content["url"], "timestamp": content["timestamp"]} for content in contents]

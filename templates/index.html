@@ -137,12 +137,12 @@
             </div>
             <div class="input-container">
                 <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
-                <button onclick="fetchHighlights()">音訊轉文字</button>
-                <button onclick="test_create_tag()">測試產生標籤</button>
+                <button id="fetchButton" onclick="fetchHighlights()">音訊轉文字</button>
               </div>
+
+              <div id="progressBar" style="display: none">處理中...</div>
               
               <div class="content-container">
-              <div id="progressBar" style="display: none">處理中...</div>
                 <div id="transcription-section" style="margin-right: 2%">
                     <h2>音訊內容</h2>
                     <div id="transcription">轉寫內容將顯示在這裡</div>
@@ -161,6 +161,10 @@
     
     <script>
       function fetchHighlights() {
+        const button = document.getElementById('fetchButton');
+        button.textContent = "處理中..."; // 更改按鈕文字
+        button.disabled = true; // 禁用按鈕
+
         const progressBar = document.getElementById("progressBar");
         progressBar.style.display = "block"; // 顯示進度條
 
@@ -198,32 +202,26 @@
             // 將結果存儲到localStorage
             localStorage.setItem("transcription", data.transcription);
             localStorage.setItem("summary", data.summary);
+
+            // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
+            button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+            button.disabled = false; // 重新啟用按鈕
           })
+
           .catch((error) => {
             console.error("Error:", error);
             progressBar.style.display = "none"; // 發生錯誤時也要隱藏進度條
           });
       }
 
-      let tagCount = 0;
-      function test_create_tag() {
-        tagCount += 1;
-    
-        const tagsContainer = document.getElementById("tagsContainer");
-        const newTag = document.createElement("div");
-        newTag.textContent = `測試標籤 ${tagCount}`;
-        newTag.className = "tag";
-    
-        // 將新標籤插入到容器的最前面
-        if (tagsContainer.firstChild) {
-            tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
-        } else {
-            tagsContainer.appendChild(newTag);
-        }
-    }
       
-      // 頁面加載時從localStorage讀取數據
+      // 頁面加載
       document.addEventListener("DOMContentLoaded", function () {
+
+        // 從後端獲取用戶標籤
+        fetchUserContents();
+
+        // 從localStorage讀取數據
         const storedTranscription = localStorage.getItem("transcription");
         const storedSummary = localStorage.getItem("summary");
 
@@ -235,6 +233,35 @@
           document.getElementById("summary").textContent = storedSummary;
         }
       });
+
+      // 從後端獲取用戶標籤
+      function fetchUserContents() {
+        fetch('/get_user_contents', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tagsContainer = document.getElementById("tagsContainer");
+                data.contents.forEach(content => {
+                    const newTag = document.createElement("div");
+                    newTag.textContent = content.file_name;
+                    newTag.setAttribute("url", content.url);
+                    newTag.className = "tag";
+                    newTag.onclick = function() {
+                        displayVideoContent(this.getAttribute("url"));
+                    };
+                    tagsContainer.appendChild(newTag);
+                });
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
 
       // 點擊標籤顯示相應的影片內容
