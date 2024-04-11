@@ -178,6 +178,7 @@
         })
           .then((response) => response.json())
           .then((data) => {
+            if (data.success) {
             document.getElementById("transcription").textContent =
               data.transcription;
             document.getElementById("summary").textContent = data.summary;
@@ -203,15 +204,21 @@
             localStorage.setItem("transcription", data.transcription);
             localStorage.setItem("summary", data.summary);
 
+
+          } else {
+            alert(data.message);
+          }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          })
+          .finally(() => {
+            // 不管請求成功或失敗，最後都隱藏進度條
+            document.getElementById("progressBar").style.display = "none";
             // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
             button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
             button.disabled = false; // 重新啟用按鈕
-          })
-
-          .catch((error) => {
-            console.error("Error:", error);
-            progressBar.style.display = "none"; // 發生錯誤時也要隱藏進度條
-          });
+        });
       }
 
       
