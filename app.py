@@ -12,6 +12,7 @@ import certifi
 import re
 from flask_dance.contrib.google import make_google_blueprint, google
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -142,24 +143,58 @@ def segment_audio(filename, segment_length_minutes):
     return segments  # 返回分段檔案的路徑列表
 
 # 音訊轉文字
-def transcribe_audio(segment_files):
-    transcriptions = []
-    for filename in segment_files:
-        try:
-            with open(filename, "rb") as audio_file:
-                transcription = client.audio.transcriptions.create(
+# def transcribe_audio(segment_files):
+#     transcriptions = []
+#     for filename in segment_files:
+#         try:
+#             with open(filename, "rb") as audio_file:
+#                 transcription = client.audio.transcriptions.create(
+#                 model="whisper-1", 
+#                 file=audio_file,
+#                 )
+#                 transcriptions.append(transcription.text)
+
+#             os.remove(filename) # 刪除處理過的音訊檔案
+#         except FileNotFoundError:
+#             print(f"檔案 {filename} 不存在。")
+#         except Exception as e:
+#             print(f"處理檔案 {filename} 時發生錯誤：{e}")
+    
+#     return " ".join(transcriptions)  # 將所有片段的轉寫結果合併
+
+def transcribe_segment(filename):
+    """處理單個音訊文件的轉寫"""
+    try:
+        with open(filename, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file,
-                )
-                transcriptions.append(transcription.text)
+            )
+            return transcription.text
+    except FileNotFoundError:
+        print(f"檔案 {filename} 不存在。")
+    except Exception as e:
+        print(f"處理檔案 {filename} 時發生錯誤：{e}")
+    finally:
+        os.remove(filename) # 確保即使出現錯誤也刪除處理過的音訊檔案
+    return ""
 
-            os.remove(filename) # 刪除處理過的音訊檔案
-        except FileNotFoundError:
-            print(f"檔案 {filename} 不存在。")
-        except Exception as e:
-            print(f"處理檔案 {filename} 時發生錯誤：{e}")
-    
-    return " ".join(transcriptions)  # 將所有片段的轉寫結果合併
+def transcribe_audio(segment_files):
+    """並行處理所有音訊分段的轉寫"""
+    transcriptions = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # 將每個音訊文件的處理任務提交給ThreadPoolExecutor
+        future_to_filename = {executor.submit(transcribe_segment, filename): filename for filename in segment_files}
+        
+        for future in as_completed(future_to_filename):
+            transcription_result = future.result()
+            if transcription_result:
+                transcriptions.append(transcription_result)
+
+    return " ".join(transcriptions)
+
+
+
 
 
 # 文字摘要
@@ -201,10 +236,11 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
+    file_name = segment_files[0][:10]
 
     content_data = {
         "google_id": google_id,
-        "file_name": segment_files[0][:10],
+        "file_name": file_name,
         "url": youtube_url,
         "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
@@ -217,8 +253,12 @@ def process_video():
     except Exception as e:
         print({"success": False, "message": str(e)})
 
-    return jsonify({'transcription': transcription, 'summary': summary})
-
+    return jsonify({
+    'success': True,
+    'transcription': transcription,
+    'summary': summary,
+    'file_name': file_name  
+})
 
 # 點擊標籤顯示內容
 @app.route('/get_video_content', methods=['POST'])
