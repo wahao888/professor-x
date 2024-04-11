@@ -174,6 +174,8 @@ def transcribe_audio(segment_files):
                 file=audio_file,
                 )
                 transcriptions.append(transcription.text)
+                print(f'transcribe_audio: {transcription.usage.prompt_tokens} prompt tokens used.')
+
             os.remove(filename) # 刪除處理過的音訊檔案
         except FileNotFoundError:
             print(f"檔案 {filename} 不存在。")
@@ -192,6 +194,8 @@ def summarize_text(text):
         ],
         model="gpt-3.5-turbo",
     )
+    print(f'summarize_text: {response.usage.prompt_tokens} prompt tokens used.')
+
     return response.choices[0].message.content
 
 

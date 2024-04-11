@@ -57,6 +57,7 @@
         .content-container > div {
             width: 48%;
             padding: 10px;
+            white-space: pre-wrap;
         }
         .list-container {
             display: flex;
@@ -104,7 +105,7 @@
             float: right;
             padding: 20px; 
             box-sizing: border-box;
-            white-space: pre-wrap;
+            
         }
 
     </style>
@@ -127,6 +128,7 @@
             <div class="input-container">
                 <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
                 <button onclick="fetchHighlights()">音訊轉文字</button>
+                <div id="progressBar" style="display: none">處理中...</div>
             </div>
 
             <div class="content-container">
@@ -140,7 +142,7 @@
                 </div>
             </div>
 
-            <div id="progressBar" style="display: none">處理中...</div>
+           
         </div>
     </div>
     
