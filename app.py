@@ -1,3 +1,5 @@
+#app.py
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import yt_dlp
 from pydub import AudioSegment
@@ -344,6 +346,8 @@ def payment_cancelled():
 
 if __name__ == '__main__':
     app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
+    # app.run(ssl_context='adhoc')
+
 
 
 # 開發階段不使用HTTPS，終端機輸入：
