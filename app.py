@@ -13,13 +13,14 @@ import re
 from flask_dance.contrib.google import make_google_blueprint, google
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import paypal_integration  # 引用另外創建的 PayPal 集成模組
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 CORS(app)
 
 # 設定mongoDB
-uri = "mongodb+srv://Barry:3Pj8xaolGJdW4XjO@professor-x-db.lx4sy0k.mongodb.net/?retryWrites=true&w=majority&appName=professor-x-DB"
+uri = os.getenv("MongoDB_url")
 app.config["MONGO_URI"] = uri
 ca = certifi.where() # 設定這個就不會出現SSL憑證錯誤
 client = MongoClient(uri, tlsCAFile=ca)
@@ -201,7 +202,7 @@ def transcribe_audio(segment_files):
 def summarize_text(text):
     response = client.chat.completions.create(
         messages=[
-                {"role": "system", "content": "你是專業的重點整理專家，用淺顯易懂的語句有條理的把重點整理出來。使用繁體中文，不用簡體字。"},
+                {"role": "system", "content": "你是專業的重點整理專家，用淺顯易懂的語句有條理的把重點整理出來。根據文本的語言輸出，如果是中文則只使用繁體中文字，不要用簡體字。"},
                 {"role": "user", "content": text}
         ],
         model="gpt-3.5-turbo",
@@ -304,6 +305,41 @@ def get_contents_by_category(category_id):
             "timestamp": content["timestamp"]
         })
     return jsonify(results)
+
+
+
+# 支付頁面
+@app.route('/payment')
+def payment():
+    return render_template('payment.html')
+
+# 初始化 PayPal
+paypal_client_id = os.getenv("paypal_client_id")
+paypal_secret = os.getenv("paypal_secret")
+paypal_integration.init_paypal(paypal_client_id, paypal_secret)
+
+@app.route('/pay')
+def pay():
+    payment_url = paypal_integration.create_payment(app, '5.00') # 設定支付金額為 5.00 美元
+    if payment_url:
+        return redirect(payment_url)
+    else:
+        return 'Unable to create payment'
+
+@app.route('/payment_completed')
+def payment_completed():
+    payment_id = request.args.get('paymentId')
+    payer_id = request.args.get('PayerID')
+    success, message = paypal_integration.execute_payment(payment_id, payer_id)
+    flash(message)  # Store the message to be shown on the next page
+    return redirect(url_for('index'))  # Redirect to the homepage
+
+@app.route('/payment_cancelled')
+def payment_cancelled():
+    flash("Payment cancelled by the user")  # Store the cancellation message
+    return redirect(url_for('index'))  # Redirect to the homepage
+
+
 
 
 if __name__ == '__main__':

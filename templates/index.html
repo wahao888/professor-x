@@ -6,11 +6,59 @@
     <title>Professor X</title>
 
     <style>
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: #DBD2C9; 
+            border: none; 
+            border-radius: 5px; 
+        }
+        #logo {
+          font-family: 'Arial', sans-serif;
+          font-size: 2em; /* Logo 的大小，'em'相對於當前字體大小 */
+          color: #976666;
+          font-weight: bold;
+          text-shadow: 2px 2px 3px #4F493F;
+          padding: 5px 10px;
+          text-decoration: none; /* 移除下劃線 */
+          transition: transform 0.3s ease; /* 添加滑鼠懸停動畫*/
+        }
+        #logo:hover {
+            transform: scale(1.05); /* 滑鼠懸停放大 logo */
+            cursor: pointer;
+        }
+        .header-right-container {
+            display: flex;
+            align-items: center;
+        }
+        .subscribe-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        .subscribe-button:hover {
+            background-color: #45a049;
+        }
+        .welcome-message {
+            font-size: 16px; /* 字體大小 */
+        }
         .main-container {
             display: flex;
             justify-content: space-between;
             height: 100vh;
-
+            align-items: flex-start; /* 對齊容器內的子項目頂部 */
+            justify-content: space-between; /* 分散對齊子項目 */
+        }
+        .list-container, .transcription-container {
+          margin-top: 10px; 
         }
         body {
             font-family: 'Arial', sans-serif;
@@ -18,12 +66,6 @@
             color: #606060; /* 莫蘭迪深灰作為文字顏色 */
             margin: 0;
             padding: 20px;
-        }
-        #googleUser {
-            position: absolute;
-            top: 15px;
-            right: 40px;
-            font-size: 16px;
         }
         #progressBar {
             width: 100%;
@@ -36,6 +78,7 @@
         }
         .transcription-container {
             display: flex;
+            flex-direction: column; /* 使子元素垂直排列 */
             justify-content: space-between;
             padding: 20px;
             background-color: #ffffff; /* 純白背景 */
@@ -96,7 +139,7 @@
             background-color: #666666;
         }
         #transcriptionList {
-            width: 25%;
+            width: 23%;
             float: left;
             padding: 20px; 
             box-sizing: border-box;
@@ -123,38 +166,50 @@
 
   </head>
   <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="header-container">
+      <a id="logo" href="/">Professor X</a>
+      <div class="header-right-container">
+        <div class="welcome-message">歡迎，{{ user_name }}！</div>
+        <a href="/payment" class="subscribe-button">訂閱</a>
+      </div>
+    </div>
 
     <div class="main-container">
       <div id="transcriptionList" class="list-container">
-                <h3>我的內容</h3>
-                <div id="tagsContainer"></div>
+        <h3>我的內容</h3>
+        <div id="tagsContainer"></div>
+      </div>
+
+      <div id="transcriptionContent" class="transcription-container">
+        <h1>YouTube內容擷取工具</h1>
+          <div class="input-container">
+            <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
+            <button id="fetchButton" onclick="fetchHighlights()">音訊轉文字</button>
+          </div>
+        
+        <div id="progressBar" style="display: none">處理中...</div>
+        
+        <div class="content-container">
+          <div id="transcription-section" style="margin-right: 2%">
+            <h2>音訊內容</h2>
+            <div id="transcription">轉寫內容將顯示在這裡</div>
+          </div>
+          <div id="summary-section" style="margin-left: 2%">
+            <h2>內容摘要</h2>
+            <div id="summary">摘要內容將顯示在這裡</div>
+          </div>
         </div>
-
-        <div id="transcriptionContent">
-            <div class="transcription-container">
-                <div id="googleUser">歡迎，{{ user_name }}！</div>
-                <h1>YouTube內容擷取工具</h1>
-            </div>
-            <div class="input-container">
-                <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
-                <button id="fetchButton" onclick="fetchHighlights()">音訊轉文字</button>
-              </div>
-
-              <div id="progressBar" style="display: none">處理中...</div>
-              
-              <div class="content-container">
-                <div id="transcription-section" style="margin-right: 2%">
-                    <h2>音訊內容</h2>
-                    <div id="transcription">轉寫內容將顯示在這裡</div>
-                </div>
-                <div id="summary-section" style="margin-left: 2%">
-                    <h2>內容摘要</h2>
-                    <div id="summary">摘要內容將顯示在這裡</div>
-                </div>
-            </div>
-
-           
-        </div>
+      </div>
     </div>
     
     
