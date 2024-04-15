@@ -54,8 +54,6 @@
             display: flex;
             justify-content: space-between;
             height: 100vh;
-            align-items: flex-start; /* 對齊容器內的子項目頂部 */
-            justify-content: space-between; /* 分散對齊子項目 */
         }
         .list-container, .transcription-container {
           margin-top: 10px; 
@@ -68,7 +66,7 @@
             padding: 20px;
         }
         #progressBar {
-            width: 100%;
+            width: 90%;
             background-color: #ddd;
             text-align: center;
             padding: 10px;
@@ -84,13 +82,11 @@
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
-            margin-bottom: 20px;
         }
 
         .content-container {
             display: flex;
             justify-content: space-between;
-            padding: 20px;
             min-height: 77vh;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
@@ -100,8 +96,11 @@
         .content-container > div {
             width: 48%;
             padding: 10px;
-            white-space: pre-wrap;
         }
+        .content-container h2 {
+          margin-top: 0.5em;  /* 根據需要調整上邊距 */
+          margin-bottom: 0.5em;  /* 根據需要調整下邊距 */
+      }
         .list-container {
             display: flex;
             flex-direction: column; /* 使子元素垂直排列 */
@@ -147,13 +146,11 @@
         #transcriptionList {
             width: 23%;
             float: left;
-            padding: 20px; 
             box-sizing: border-box;
         }
         #transcriptionContent {
             width: 75%;
             float: right;
-            padding: 20px; 
             box-sizing: border-box;
             
         }
@@ -230,11 +227,11 @@
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
-            <div id="transcription">轉寫內容將顯示在這裡</div>
+            <div id="transcription" style="white-space:pre-wrap;">轉寫內容將顯示在這裡</div>
           </div>
           <div id="summary-section" style="margin-left: 2%">
             <h2>內容摘要</h2>
-            <div id="summary">摘要內容將顯示在這裡</div>
+            <div id="summary" style="white-space:pre-wrap;">摘要內容將顯示在這裡</div>
           </div>
         </div>
       </div>
