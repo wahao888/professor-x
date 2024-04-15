@@ -336,13 +336,16 @@ paypal_client_id = os.getenv("paypal_client_id")
 paypal_secret = os.getenv("paypal_secret")
 paypal_integration.init_paypal(paypal_client_id, paypal_secret)
 
-@app.route('/pay')
-def pay():
-    payment_url = paypal_integration.create_payment(app, '5.00') # 設定支付金額為 5.00 美元
-    if payment_url:
-        return redirect(payment_url)
-    else:
-        return 'Unable to create payment'
+@app.route('/pay/<amount>')
+def pay(amount):
+    try:
+        payment_url = paypal_integration.create_payment(app, amount)  # 接受金額作為參數
+        if payment_url:
+            return redirect(payment_url)
+        else:
+            return 'Unable to create payment'
+    except Exception as e:
+        return str(e)
 
 @app.route('/payment_completed')
 def payment_completed():

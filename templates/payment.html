@@ -2,14 +2,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayPal Payment Test</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subscription Plans</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4eae6; /* 莫蘭迪色調背景 */
+    color: #6d6875; /* 莫蘭迪色調文字 */
+  }
+  .container {
+    width: 80%;
+    margin: 0 auto;
+  }
+  .card {
+    background-color: #e8e8e4; /* 莫蘭迪色調卡片背景 */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .title {
+    color: #5a5a66; /* 深莫蘭迪色 */
+    text-align: center;
+  }
+  .price {
+    color: #9a8c98; /* 淺莫蘭迪色 */
+    font-size: 1.5em;
+    text-align: center;
+  }
+  .description {
+    text-align: center;
+    margin-top: 10px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #b5838d; /* 莫蘭迪粉紫色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background-color: #9d8189; /* 深莫蘭迪粉紫色 */
+  }
+  .footer {
+    text-align: center;
+    padding: 10px;
+    margin-top: 30px;
+  }
+  .plans-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch; /* 確保所有項目高度一致 */
+  }
+/* 這段CSS確保了 .plan 內的元素垂直對齊 */
+.plan {
+    flex: 1; /* 確保每個計劃元素都有相同的彈性基礎 */
+    margin: 0 20px; /* 在計劃之間增加一些間隔 */
+    flex-basis: calc(33% - 20px); /* 設置固定的寬度 減去 margin 產生的空間 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 這會在每個計劃的頂部和底部之間均勻分佈空間 */
+    height: 100%; /* 確保每個計劃都有相同的高度 */
+  }
+  .plan h3 {
+    text-align: center; /* 這會使標題文字居中 */
+    color: #6d6875; /* 深莫蘭迪色，與頁面的文字顏色保持一致 */
+    font-size: 1.25em; /* 根據您的需求可調整大小，1.25em 是相對於父元素的字體大小 */
+    margin-top: 0.5em; /* 添加適當的上邊距 */
+    margin-bottom: 0.5em; /* 添加適當的下邊距 */
+  }
+  /* 新增一個容器來包裹價格和按鈕 */
+  .price-button-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1; /* 這將使容器能夠延伸至整個剩餘空間 */
+  }
+  .price {
+    /* 確保價格在容器中的位置是固定的 */
+    margin-bottom: 16px; /* 或根據需要調整此值 */
+  }
+    /* 針對非常窄的視窗調整布局 */
+    @media (max-width: 600px) {
+        .plans-container {
+        flex-direction: column;
+        }
+    
+        .plan {
+        margin: 10px 0; /* 對於垂直堆疊的計劃，增加垂直間隔 */
+        flex-basis: auto; /* 在垂直堆疊時取消固定寬度 */
+        }
+    }
+</style>
 </head>
 <body>
-    <h1>Welcome to PayPal Payment Test</h1>
-    <form action="/pay" method="get">
-        <button type="submit">Pay with PayPal</button>
-    </form>
+
+    <div class="container">
+        <h1 class="title">選擇您的方案</h1>
+        
+        <div class="card">
+          <h2 class="title">免費方案</h2>
+          <p class="description">每日獲得15點，每個影片最多轉錄5分鐘，每日總計最多15分鐘。</p>
+          <button class="btn">選擇免費方案</button>
+        </div>
+        
+        <!-- 月付方案 -->
+        <div class="card">
+            <h2 class="title">月付方案</h2>
+            <div class="plans-container">
+                <div class="plan">
+                    <h3>基本方案 17% off</h3>
+                        <p class="description">包含每月1200點 (20小時)，適合偶爾需要轉錄的個人使用者。</p>
+                        <div class="price-button-container">
+                            <div class="price">$10 美元 <br>（約台幣300元）</div>
+                            <form action="/pay/10" method="get">
+                              <button class="btn" type="submit">立即訂閱</button>
+                            </form>
+                        </div>
+                </div>
+                <div class="plan">
+                    <h3>標準方案 33% off</h3>
+                        <p class="description">提供每月3000點 (50小時)，適合頻繁使用轉錄服務的用戶。</p>
+                        <div class="price-button-container">
+                            <div class="price">$20 美元 <br>（約台幣600元）</div>
+                            <form action="/pay/20" method="get">
+                              <button class="btn" type="submit">立即訂閱</button>
+                            </form>
+                        </div>
+                </div>
+                <div class="plan">
+                    <h3>專業方案 50% off</h3>
+                        <p class="description">包含每月6000點 (100小時)，適合對轉錄有高需求的專業用戶。</p>
+                        <div class="price-button-container">
+                            <div class="price">$30 美元 <br>（約台幣900元）</div>
+                            <form action="/pay/30" method="get">
+                                <button class="btn" type="submit">立即訂閱</button>
+                            </form>
+                        </div>
+                </div>
+            </div>
+        </div>
+          
+        
+        <div class="card">
+          <h2 class="title">購買點數</h2>
+          <div class="price">$1 美元 <br>（約台幣30元）</div>
+          <p class="description">購買100點，隨時在我們的服務中使用。</p>
+          <form action="/pay/1" method="get">
+              <button class="btn" type="submit">立即購買</button>
+          </form>
+        </div>
+        
+        <div class="footer">
+          <a href="/" style="text-decoration: none;">
+              <button class="btn">返回首頁</button>
+          </a>
+        </div>
+      </div>
+      
+
 </body>
 </html>
+
+
+
+
+
