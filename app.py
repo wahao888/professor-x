@@ -16,18 +16,39 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import paypal_integration  # 引用另外創建的 PayPal 集成模組
+from google.cloud import secretmanager
 
 app = Flask(__name__)
-load_dotenv() 
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
 CORS(app)
 
-# 設定mongoDB
-uri = os.getenv("MongoDB_url")
-app.config["MONGO_URI"] = uri
-ca = certifi.where() # 設定這個就不會出現SSL憑證錯誤
-client = MongoClient(uri, tlsCAFile=ca)
+# 封裝一個函數來決定從哪裡獲取秘密
+def get_secret(secret_name):
+    # 如果是 GAE 環境，從 Secret Manager 獲取
+    if os.getenv('GAE_ENV', '').startswith('standard'):
+        # 實例化 Secret Manager 客戶端
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/professor-x-419703/secrets/{secret_name}/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        return response.payload.data.decode("UTF-8")
+    else:
+        # 如果不是 GAE 環境，從 .env 文件載入
+        return os.getenv(secret_name)
 
+load_dotenv() 
+
+# 使用 get_secret 函數來獲取各種配置
+app.secret_key = get_secret("FLASK_SECRET_KEY")
+mongo_uri = get_secret("MongoDB_url")
+openai_api_key = get_secret("OPENAI_API_KEY")
+google_client_id = get_secret("client_id")
+google_client_secret = get_secret("client_secret")
+paypal_client_id = get_secret("paypal_client_id")
+paypal_secret = get_secret("paypal_secret")
+
+# 設定mongoDB
+app.config["MONGO_URI"] = mongo_uri
+ca = certifi.where() # 設定這個就不會出現SSL憑證錯誤
+client = MongoClient(mongo_uri, tlsCAFile=ca)
 # 獲取資料庫和集合
 db = client['myDatabase'] 
 test_collection = db['test_collection']
@@ -35,32 +56,29 @@ content_db = db["contents"]
 google_db = db["google_login"]
 users_db = db['users']
 
-
 # 設置google login
 google_bp = make_google_blueprint(
-    client_id=os.getenv("client_id"),
-    client_secret=os.getenv("client_secret"),
+    client_id=google_client_id,
+    client_secret=google_client_secret,
     redirect_to="index",
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-
 # 從環境變量中獲取 API 金鑰
-
-api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(
-    api_key=api_key,
+    api_key=openai_api_key,
 )
-headers = {
-    "Authorization": f"Bearer {api_key}"
-}
+
 
 
 @app.route("/")
+def welcome():
+    return render_template('welcome.html')
+
+@app.route("/index")
 def index():
     if not google.authorized:
         return redirect(url_for("google.login"))
-    
     try:
         resp = google.get("/oauth2/v1/userinfo")
         if resp.ok:
@@ -278,6 +296,7 @@ def process_video():
     }
     try:
         content_db.insert_one(content_data)
+        print("Content saved successfully.")
     except Exception as e:
         print({"success": False, "message": str(e)})
 
@@ -343,8 +362,6 @@ def payment():
     return render_template('payment.html', user_name=name, user_points=user_points)
 
 # 初始化 PayPal
-paypal_client_id = os.getenv("paypal_client_id")
-paypal_secret = os.getenv("paypal_secret")
 paypal_integration.init_paypal(paypal_client_id, paypal_secret)
 
 @app.route('/pay/<amount>')
@@ -400,7 +417,7 @@ def payment_cancelled():
 
 if __name__ == '__main__':
     app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
-    # app.run(ssl_context='adhoc')
+    # app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
 
 
