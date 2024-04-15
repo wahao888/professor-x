@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import paypal_integration  # 引用另外創建的 PayPal 集成模組
 
 app = Flask(__name__)
+load_dotenv() 
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 CORS(app)
 
@@ -45,7 +46,7 @@ app.register_blueprint(google_bp, url_prefix="/login")
 
 
 # 從環境變量中獲取 API 金鑰
-load_dotenv() 
+
 api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(
     api_key=api_key,

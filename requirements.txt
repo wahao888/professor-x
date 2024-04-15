@@ -1,14 +1,14 @@
 bootstrap4==0.1.0
 Flask==2.3.2
 Flask-SocketIO==5.3.5
-gcloud==0.18.3
-googleapis-common-protos==1.60.0
 imageio==2.33.0
 imageio-ffmpeg==0.4.9
 openai==1.16.2
 python-dotenv==1.0.0
 yt-dlp==2024.3.10
-gunicorn == 21.2.0
-pydub == 0.25.1
-flask-cors
-ffmpeg
+gunicorn==21.2.0
+pydub==0.25.1
+flask-cors==3.0.10
+pymongo==3.12.1
+flask_dance==3.3.1
+oauthlib==3.2.0
