@@ -85,14 +85,23 @@ def index():
                 # 如果使用者不存在，創建新使用者
                 users_db.insert_one(user_info_to_store)
 
+            # 取得用戶點數
+            user_points = 0
+            google_id = session.get('google_id')
+            if google_id:
+                user_data = users_db.find_one({"google_id": google_id})
+                user_points = user_data.get('points', 0)
+
             session['google_id'] = google_id
+            session['name'] = name
+            session['user_points'] = user_points
 
         else:
             return "無法獲取使用者資訊", 500
     except TokenExpiredError:
         return redirect(url_for("google.login"))  # 引導用戶重新登入
     
-    return render_template('index.html', user_name=name)
+    return render_template('index.html', user_name=name, user_points=user_points)
 
 
 
@@ -329,7 +338,9 @@ def get_contents_by_category(category_id):
 # 支付頁面
 @app.route('/payment')
 def payment():
-    return render_template('payment.html')
+    user_points = session.get('user_points', 0)  # 如果沒有找到，預設為 0
+    name = session.get('name')
+    return render_template('payment.html', user_name=name, user_points=user_points)
 
 # 初始化 PayPal
 paypal_client_id = os.getenv("paypal_client_id")
@@ -347,13 +358,37 @@ def pay(amount):
     except Exception as e:
         return str(e)
 
+def calculate_points_based_on_amount(amount):
+    # 定義每個計劃的點數
+    plans = {
+        '10': 1200, # 假設 $10 購買 1200 點
+        '20': 3000, # 假設 $20 購買 3000 點
+        '30': 6000, # 假設 $30 購買 6000 點
+    }
+    return plans.get(amount, 0)  # 返回相對應的點數，如果金額不匹配則
+
+
 @app.route('/payment_completed')
 def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
     success, message = paypal_integration.execute_payment(payment_id, payer_id)
-    flash(message)  # Store the message to be shown on the next page
-    return redirect(url_for('index'))  # Redirect to the homepage
+    if success:
+        # 取得購買的點數數量
+        amount = request.args.get('amount')
+        # 計算點數數量，這需要您根據實際方案自行計算
+        points = calculate_points_based_on_amount(amount)
+        google_id = session.get('google_id')
+        if google_id:
+            # 更新資料庫中的點數數量
+            users_db.update_one({"google_id": google_id}, {"$inc": {"points": points}})
+            flash(f'Payment successful! You now have {points} additional points.', 'success')
+        else:
+            flash('You need to log in to receive points.', 'error')
+    else:
+        flash(message, 'error')
+
+    return redirect(url_for('index'))
 
 @app.route('/payment_cancelled')
 def payment_cancelled():

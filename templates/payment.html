@@ -6,6 +6,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Subscription Plans</title>
 <style>
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        background: #DBD2C9; 
+        border: none; 
+        border-radius: 5px; 
+    }
+    #logo {
+      font-family: 'Arial', sans-serif;
+      font-size: 2em; /* Logo 的大小，'em'相對於當前字體大小 */
+      color: #976666;
+      font-weight: bold;
+      text-shadow: 2px 2px 3px #4F493F;
+      padding: 5px 10px;
+      text-decoration: none; /* 移除下劃線 */
+      transition: transform 0.3s ease; /* 添加滑鼠懸停動畫*/
+    }
+    #logo:hover {
+        transform: scale(1.05); /* 滑鼠懸停放大 logo */
+        cursor: pointer;
+    }
+    .header-right-container {
+        display: flex;
+        align-items: center;
+    }
   body {
     font-family: 'Arial', sans-serif;
     background-color: #f4eae6; /* 莫蘭迪色調背景 */
@@ -101,6 +128,14 @@
 </style>
 </head>
 <body>
+
+    <div class="header-container">
+        <a id="logo" href="/">Professor X</a>
+        <div class="header-right-container">
+          <div class="welcome-message">歡迎，{{ user_name }}！</div>
+          <div class="user-points">您目前有 {{ user_points }} 點</div>
+        </div>
+      </div>
 
     <div class="container">
         <h1 class="title">選擇您的方案</h1>
