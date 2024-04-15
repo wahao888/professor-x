@@ -115,6 +115,7 @@
         }
         .input-container {
             display: flex;
+            flex-direction: column; /* 指定子元素垂直排列 */
             justify-content: space-between;
             padding: 20px;
             background-color: #ffffff; /* 純白背景 */
@@ -122,7 +123,11 @@
             border-radius: 10px; /* 圓角 */
             margin-bottom: 20px;
         }
-        
+        .url-input-container { /* 新增的類別為了 flex 排版 */
+          display: flex;
+          flex-grow: 1; /* 保證輸入框可以擴展佔據多餘空間 */
+          margin-bottom: 10px; /* 和預估信息之間的間距 */
+      }
         .input-container input {
             flex-grow: 1; /* 讓輸入框佔據大部分空間 */
             margin-right: 20px;
@@ -134,6 +139,7 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
+            margin-right: 10px;
         }
         button:hover {
             background-color: #666666;
@@ -162,6 +168,21 @@
       .tag:hover {
           background-color: #d0d0d0; /* 鼠標懸停時的背景色 */
       }
+      .button-green {
+        background-color: #4CAF50; /* 莫蘭迪綠色 */
+        color: white;
+      }
+      
+      .button-grey {
+          background-color: #808080; /* 莫蘭迪藍 */
+          color: #ffffff;
+          cursor: not-allowed; /* 當滑鼠懸停時顯示禁止符號 */
+      }
+      #videoInfo {
+        display: flex; /* 使用flex來排列預估時間和token消耗 */
+        align-items: center; /* 中心對齊 */
+        margin-top: 10px; /* 與輸入框之間的間距 */
+    }
     </style>
 
   </head>
@@ -193,10 +214,17 @@
       <div id="transcriptionContent" class="transcription-container">
         <h1>YouTube內容擷取工具</h1>
           <div class="input-container">
-            <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
-            <button id="fetchButton" onclick="fetchHighlights()">音訊轉文字</button>
+            <div class="url-input-container">
+              <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
+              <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預估時間</button>
+              <button id="fetchButton" onclick="fetchHighlights()" class="button-grey" disabled=true >音訊轉文字</button>
+            </div>
+            <div id="videoInfo" style="display: flex; align-items: center;">
+              <span id="duration" style="margin-right: 10px;">預估時間: 未知</span>
+              <span id="estimatedTokens">預計 Token 消耗: 未知</span>
+            </div>
           </div>
-        
+
         <div id="progressBar" style="display: none">處理中...</div>
         
         <div class="content-container">
@@ -215,6 +243,55 @@
     
     
     <script>
+      // 驗證YouTube URL
+      document.addEventListener("DOMContentLoaded", function () {
+        var youtubeUrlInput = document.getElementById("youtubeUrl");
+        var estimateButton = document.getElementById("estimateButton");
+    
+        youtubeUrlInput.addEventListener("input", function() {
+            if (isValidYouTubeUrl(youtubeUrlInput.value)) {
+                estimateButton.disabled = false; // 啟用預估時間按鈕
+                document.getElementById("estimateButton").classList.replace("button-grey", "button-green");
+            } else {
+                estimateButton.disabled = true;  // 禁用預估時間按鈕
+                document.getElementById("estimateButton").classList.replace("button-green", "button-grey");
+            }
+        });
+    });
+    function isValidYouTubeUrl(url) {
+        var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
+        return pattern.test(url);
+    }
+
+    // 從後端獲取影片資訊（時長和預估Token）
+    function fetchVideoInfo() {
+      const url = document.getElementById("youtubeUrl").value;
+      fetch("/get_video_info", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ youtubeUrl: url }),
+      })
+      .then((response) => response.json())
+      .then((data) => {
+          if (data.success) {
+              document.getElementById("duration").textContent = `預估時間: ${data.duration} 秒`;
+              document.getElementById("estimatedTokens").textContent = `預計 Token 消耗: ${data.estimatedTokens}`;
+              document.getElementById("videoInfo").style.display = "block";
+              document.getElementById("fetchButton").disabled = false;
+              document.getElementById("fetchButton").classList.replace("button-grey", "button-green");
+          } else {
+              alert(data.message);
+          }
+      })
+      .catch((error) => {
+          console.error("Error:", error);
+      });
+    }
+
+
+    // 從後端獲取音訊轉文字的摘要
       function fetchHighlights() {
         const button = document.getElementById('fetchButton');
         button.textContent = "處理中..."; // 更改按鈕文字

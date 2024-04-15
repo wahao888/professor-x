@@ -97,6 +97,26 @@ def index():
 
 
 
+@app.route('/get_video_info', methods=['POST'])
+def get_video_info():
+    data = request.json
+    youtube_url = data['youtubeUrl']
+    try:
+        ydl_opts = {
+            'format': 'bestaudio/best'
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=False)
+            duration = info.get('duration', 0)  # 獲取影片時長（秒）
+            token_per_second = 8
+            estimated_tokens = duration * token_per_second
+        return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens})
+    except Exception as e:
+        print("錯誤訊息:", str(e))
+        return jsonify({"success": False, "message": "請輸入正確的Youtube網址"}), 500
+
+
+
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
@@ -166,38 +186,33 @@ def segment_audio(filename, segment_length_minutes):
     
 #     return " ".join(transcriptions)  # 將所有片段的轉寫結果合併
 
-def transcribe_segment(filename):
-    """處理單個音訊文件的轉寫"""
+def transcribe_segment(filename, index):
+    """處理單個音訊文件的轉寫，返回包括索引的結果"""
     try:
         with open(filename, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file,
             )
-            return transcription.text
+            return index, transcription.text
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
     except Exception as e:
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
     finally:
-        os.remove(filename) # 確保即使出現錯誤也刪除處理過的音訊檔案
-    return ""
+        os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
+    return index, ""
 
 def transcribe_audio(segment_files):
-    """並行處理所有音訊分段的轉寫"""
-    transcriptions = []
+    """並行處理所有音訊分段的轉寫，確保按原始順序組合結果"""
+    transcriptions = [None] * len(segment_files)  # 初始化結果列表，大小與分段數相同
     with ThreadPoolExecutor(max_workers=5) as executor:
-        # 將每個音訊文件的處理任務提交給ThreadPoolExecutor
-        future_to_filename = {executor.submit(transcribe_segment, filename): filename for filename in segment_files}
-        
-        for future in as_completed(future_to_filename):
-            transcription_result = future.result()
-            if transcription_result:
-                transcriptions.append(transcription_result)
+        futures = [executor.submit(transcribe_segment, filename, i) for i, filename in enumerate(segment_files)]
+        for future in as_completed(futures):
+            index, transcription_result = future.result()
+            transcriptions[index] = transcription_result  # 按索引放置轉寫結果
 
-    return " ".join(transcriptions)
-
-
+    return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
 
