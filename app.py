@@ -97,7 +97,7 @@ def index():
             # 檢查數據庫是否已有該使用者
             existing_user = users_db.find_one({"google_id": google_id})
             if existing_user:
-                # 如果使用者已存在，更新其資訊和令牌
+                # 如果使用者已存在
                 users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
             else:
                 # 如果使用者不存在，創建新使用者
@@ -105,14 +105,13 @@ def index():
 
             # 取得用戶點數
             user_points = 0
-            google_id = session.get('google_id')
-            if google_id:
-                user_data = users_db.find_one({"google_id": google_id})
-                user_points = user_data.get('points', 0)
+            user_data = users_db.find_one({"google_id": google_id})
+            user_points = round(user_data.get('points', 0), 2)
 
             session['google_id'] = google_id
             session['name'] = name
             session['user_points'] = user_points
+            print("session資訊：",session['google_id'], session['name'], session['user_points'])
 
         else:
             return "無法獲取使用者資訊", 500
@@ -135,8 +134,8 @@ def get_video_info():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
             duration = info.get('duration', 0)  # 獲取影片時長（秒）
-            token_per_second = 8
-            estimated_tokens = duration * token_per_second
+            token_per_second = 0.0167  # 每秒0.00167個令牌
+            estimated_tokens =  round(duration * token_per_second, 2)
         return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens})
     except Exception as e:
         print("錯誤訊息:", str(e))
@@ -160,10 +159,10 @@ def download_youtube_audio_as_mp3(youtube_url):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=False)
-        video_title = info.get('title', 'DownloadedAudio')[:10]  # 獲取標題的前10個字元
+        video_title = info.get('title', 'DownloadedAudio') # 獲取標題的前10個字元
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")  # 獲取當前時間戳
         # 結合影片標題的前五個字元與時間戳作為檔案名
-        final_filename = f"{video_title}_{current_time}"
+        final_filename = f"/tmp/{video_title}_{current_time}"
         ydl_opts['outtmpl'] = final_filename  # 更新選項中的檔案名模板
 
     # 使用更新後的選項再次建立yt_dlp實例並下載轉換
@@ -282,7 +281,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0][:10]
+    file_name = segment_files[0][5:15]
 
     content_data = {
         "google_id": google_id,
