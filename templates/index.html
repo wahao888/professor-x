@@ -296,6 +296,7 @@
         const button = document.getElementById('fetchButton');
         button.textContent = "處理中..."; // 更改按鈕文字
         button.disabled = true; // 禁用按鈕
+        button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
         const progressBar = document.getElementById("progressBar");
         progressBar.style.display = "block"; // 顯示進度條
@@ -349,7 +350,8 @@
             document.getElementById("progressBar").style.display = "none";
             // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
             button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
-            button.disabled = false; // 重新啟用按鈕
+            button.disabled = true; // 禁用按鈕
+            button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
         });
       }
 
