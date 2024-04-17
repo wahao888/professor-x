@@ -151,7 +151,7 @@ def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
     try:
         client = storage.Client()
         bucket = client.get_bucket(gcs_bucket_name)
-        blob = bucket.blob(f"/audios/{gcs_file_path}") #上傳到audios資料夾
+        blob = bucket.blob(gcs_file_path)
         blob.upload_from_filename(local_file_path)
 
         return "Upload successful"
@@ -178,16 +178,17 @@ def download_youtube_audio_as_mp3(youtube_url):
             video_title = info.get('title', 'DownloadedAudio')
             current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
             final_filename = f"{video_title}_{current_time}.mp3"
-            ydl_opts['outtmpl'] = "/tmp/" + final_filename  # 更新選項中的檔案名模板
+            ydl_opts['outtmpl'] = "/tmp/" + final_filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([youtube_url])
             print("yt_dlp Download successful")
 
         # 上傳到GCS
-        result = upload_to_gcs(f"/tmp/{final_filename}", CLOUD_STORAGE_BUCKET, f"{final_filename}")
-        print("GCS upload result:", result)
+        print("tmp file:", os.listdir("/tmp"))
+        result = upload_to_gcs(f"/tmp/{final_filename}", CLOUD_STORAGE_BUCKET, final_filename)
 
+        return result
         return segment_audio(final_filename, 5)  # 假設分段長度為5分鐘
 
     except Exception as e:
@@ -286,32 +287,32 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
 
-    # 針對該用戶檢查URL是否已經處理過
-    google_id = session.get('google_id')  # 獲取使用者的Google ID
-    existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
-    if existing_content:
-        # 如果URL已經存在，返回提示
-        return jsonify({"success": False, "message": "已經處理過囉！"})
+    # # 針對該用戶檢查URL是否已經處理過
+    # google_id = session.get('google_id')  # 獲取使用者的Google ID
+    # existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
+    # if existing_content:
+    #     # 如果URL已經存在，返回提示
+    #     return jsonify({"success": False, "message": "已經處理過囉！"})
 
-    # 全面檢查URL是否已經處理過
-    checkall_existing_content = content_db.find_one({"url": youtube_url})
-    if checkall_existing_content:
-        # 如果找到相關記錄，則直接回傳存在的資料
-        return jsonify({
-            "success": True,
-            "transcription": checkall_existing_content["transcription"],
-            "summary": checkall_existing_content["summary"],
-            "file_name": checkall_existing_content["file_name"]
-        })
+    # # 全面檢查URL是否已經處理過
+    # checkall_existing_content = content_db.find_one({"url": youtube_url})
+    # if checkall_existing_content:
+    #     # 如果找到相關記錄，則直接回傳存在的資料
+    #     return jsonify({
+    #         "success": True,
+    #         "transcription": checkall_existing_content["transcription"],
+    #         "summary": checkall_existing_content["summary"],
+    #         "file_name": checkall_existing_content["file_name"]
+    #     })
 
     message = download_youtube_audio_as_mp3(youtube_url)
     print("message:", message)
     return jsonify({
     'success': True,
     'message': message,
-    'transcription': "測試完成已上傳",
-    'summary': "測試完成已上傳",
-    'file_name': "測試完成已上傳"  
+    'transcription': "測試完成",
+    'summary': "測試完成",
+    'file_name': "測試完成"  
 })
 
 
