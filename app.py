@@ -17,6 +17,7 @@ from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import paypal_integration  # 引用另外創建的 PayPal 集成模組
 from google.cloud import secretmanager, storage
+import subprocess
 
 app = Flask(__name__)
 CORS(app)
@@ -44,6 +45,8 @@ google_client_id = get_secret("client_id")
 google_client_secret = get_secret("client_secret")
 paypal_client_id = get_secret("paypal_client_id")
 paypal_secret = get_secret("paypal_secret")
+CLOUD_STORAGE_BUCKET = get_secret("CLOUD_STORAGE_BUCKET")
+
 
 # 設定mongoDB
 app.config["MONGO_URI"] = mongo_uri
@@ -136,6 +139,7 @@ def get_video_info():
             duration = info.get('duration', 0)  # 獲取影片時長（秒）
             token_per_second = 0.0167  # 每秒0.00167個令牌
             estimated_tokens =  round(duration * token_per_second, 2)
+            print("estimated_tokens:", estimated_tokens)
         return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens})
     except Exception as e:
         print("錯誤訊息:", str(e))
@@ -143,33 +147,53 @@ def get_video_info():
 
 
 
+def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
+    try:
+        client = storage.Client()
+        bucket = client.get_bucket(gcs_bucket_name)
+        blob = bucket.blob(f"/audios/{gcs_file_path}") #上傳到audios資料夾
+        blob.upload_from_filename(local_file_path)
+
+        return "Upload successful"
+    except Exception as e:
+        return f"Error during upload to GCS: {str(e)}"
+
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
-    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    try:
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(youtube_url, download=False)
-        video_title = info.get('title', 'DownloadedAudio') # 獲取標題的前10個字元
-        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")  # 獲取當前時間戳
-        # 結合影片標題的前五個字元與時間戳作為檔案名
-        final_filename = f"/tmp/{video_title}_{current_time}"
-        ydl_opts['outtmpl'] = final_filename  # 更新選項中的檔案名模板
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=False)
+            video_title = info.get('title', 'DownloadedAudio')
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            final_filename = f"{video_title}_{current_time}.mp3"
+            ydl_opts['outtmpl'] = "/tmp/" + final_filename  # 更新選項中的檔案名模板
 
-    # 使用更新後的選項再次建立yt_dlp實例並下載轉換
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([youtube_url])
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([youtube_url])
+            print("yt_dlp Download successful")
 
-    return segment_audio(final_filename + ".mp3", 5)  # 假設分段長度為5分鐘
+        # 上傳到GCS
+        result = upload_to_gcs(f"/tmp/{final_filename}", CLOUD_STORAGE_BUCKET, f"{final_filename}")
+        print("GCS upload result:", result)
+
+        return segment_audio(final_filename, 5)  # 假設分段長度為5分鐘
+
+    except Exception as e:
+        return f"Error during upload: {str(e)}"
+
+
 
 # 音訊分段
 def segment_audio(filename, segment_length_minutes):
@@ -280,6 +304,19 @@ def process_video():
             "file_name": checkall_existing_content["file_name"]
         })
 
+    message = download_youtube_audio_as_mp3(youtube_url)
+    print("message:", message)
+    return jsonify({
+    'success': True,
+    'message': message,
+    'transcription': "測試完成已上傳",
+    'summary': "測試完成已上傳",
+    'file_name': "測試完成已上傳"  
+})
+
+
+
+
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url)
     transcription = transcribe_audio(segment_files).replace(" ", "\n")
@@ -293,7 +330,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0][5:15]
+    file_name = segment_files[0][10]
 
     content_data = {
         "google_id": google_id,

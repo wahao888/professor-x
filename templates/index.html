@@ -265,6 +265,12 @@
 
     // 從後端獲取影片資訊（時長和預估Token）
     function fetchVideoInfo() {
+      const button = document.getElementById('estimateButton');
+      button.textContent = "處理中..."; // 更改按鈕文字
+      button.disabled = true; // 禁用按鈕
+      button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
+
+
       const url = document.getElementById("youtubeUrl").value;
       fetch("/get_video_info", {
           method: "POST",
@@ -281,6 +287,9 @@
               document.getElementById("videoInfo").style.display = "block";
               document.getElementById("fetchButton").disabled = false;
               document.getElementById("fetchButton").classList.replace("button-grey", "button-green");
+              button.textContent = "預估消耗"; // 更改回原來的按鈕文字
+              button.disabled = false; // 啟用按鈕
+              button.classList.replace("button-grey", "button-green"); // 更改按鈕成綠色
           } else {
               alert(data.message);
           }
@@ -315,6 +324,7 @@
             document.getElementById("transcription").textContent =
               data.transcription;
             document.getElementById("summary").textContent = data.summary;
+            console.log(data.message);
             progressBar.style.display = "none"; // 隱藏進度條
 
             // 創建新標籤並添加到左側列表
