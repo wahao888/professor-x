@@ -16,7 +16,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import paypal_integration  # 引用另外創建的 PayPal 集成模組
-from google.cloud import secretmanager
+from google.cloud import secretmanager, storage
 
 app = Flask(__name__)
 CORS(app)
