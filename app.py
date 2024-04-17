@@ -163,6 +163,7 @@ def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
 def download_youtube_audio_as_mp3(youtube_url):
     try:
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print("tmp file:", os.listdir("/tmp"))
 
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -177,19 +178,18 @@ def download_youtube_audio_as_mp3(youtube_url):
             info = ydl.extract_info(youtube_url, download=False)
             video_title = info.get('title', 'DownloadedAudio')
             current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-            final_filename = f"{video_title}_{current_time}.mp3"
-            ydl_opts['outtmpl'] = "/tmp/" + final_filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
+            filename = f"{video_title}_{current_time}.mp3"
+            ydl_opts['outtmpl'] = "/tmp/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([youtube_url])
-            print("yt_dlp Download successful")
 
+        # 確認tmp資料夾的檔案
+        print("yt_dlp Download successful, tmp file:", os.listdir("/tmp"))
         # 上傳到GCS
-        print("tmp file:", os.listdir("/tmp"))
-        result = upload_to_gcs(f"/tmp/{final_filename}", CLOUD_STORAGE_BUCKET, final_filename)
-
-        return result
-        return segment_audio(final_filename, 5)  # 假設分段長度為5分鐘
+        # result = upload_to_gcs(f"/tmp/{filename}", CLOUD_STORAGE_BUCKET, filename)
+        # return result # 測試用
+        return segment_audio(filename, 5)  # 假設分段長度為5分鐘
 
     except Exception as e:
         return f"Error during upload: {str(e)}"
@@ -199,7 +199,7 @@ def download_youtube_audio_as_mp3(youtube_url):
 # 音訊分段
 def segment_audio(filename, segment_length_minutes):
     segment_length_ms = segment_length_minutes * 60 * 1000
-    audio = AudioSegment.from_file(filename)
+    audio = AudioSegment.from_file(os.path.join("/tmp", filename))
     
     segments = []
     start = 0
@@ -208,12 +208,13 @@ def segment_audio(filename, segment_length_minutes):
         end = start + segment_length_ms
         segment = audio[start:end]
         segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3" # [:-4]移除檔案擴展名
-        segment.export(segment_filename, format="mp3")
-        segments.append(segment_filename)  # 將檔案路徑加入列表
+        full_segment_path = os.path.join("/tmp", segment_filename)
+        segment.export(full_segment_path, format="mp3")
+        segments.append(full_segment_path)   # 將檔案路徑加入列表
         start += segment_length_ms
         part += 1
 
-    os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
+    # os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
 
     return segments  # 返回分段檔案的路徑列表
 
@@ -245,13 +246,14 @@ def transcribe_segment(filename, index):
                 model="whisper-1", 
                 file=audio_file,
             )
+            print(f"transcribe_segment {index}: Transcription successful.")
             return index, transcription.text
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
     except Exception as e:
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
-    finally:
-        os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
+    # finally:
+    #     os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
     return index, ""
 
 def transcribe_audio(segment_files):
@@ -262,7 +264,7 @@ def transcribe_audio(segment_files):
         for future in as_completed(futures):
             index, transcription_result = future.result()
             transcriptions[index] = transcription_result  # 按索引放置轉寫結果
-
+    print("transcribe_audio: All segments transcribed.")
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
@@ -287,39 +289,37 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
 
-    # # 針對該用戶檢查URL是否已經處理過
-    # google_id = session.get('google_id')  # 獲取使用者的Google ID
-    # existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
-    # if existing_content:
-    #     # 如果URL已經存在，返回提示
-    #     return jsonify({"success": False, "message": "已經處理過囉！"})
+    # 針對該用戶檢查URL是否已經處理過
+    google_id = session.get('google_id')  # 獲取使用者的Google ID
+    existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
+    if existing_content:
+        # 如果URL已經存在，返回提示
+        return jsonify({"success": False, "message": "已經處理過囉！"})
 
-    # # 全面檢查URL是否已經處理過
-    # checkall_existing_content = content_db.find_one({"url": youtube_url})
-    # if checkall_existing_content:
-    #     # 如果找到相關記錄，則直接回傳存在的資料
-    #     return jsonify({
-    #         "success": True,
-    #         "transcription": checkall_existing_content["transcription"],
-    #         "summary": checkall_existing_content["summary"],
-    #         "file_name": checkall_existing_content["file_name"]
-    #     })
+    # 全面檢查URL是否已經處理過
+    checkall_existing_content = content_db.find_one({"url": youtube_url})
+    if checkall_existing_content:
+        # 如果找到相關記錄，則直接回傳存在的資料
+        return jsonify({
+            "success": True,
+            "transcription": checkall_existing_content["transcription"],
+            "summary": checkall_existing_content["summary"],
+            "file_name": checkall_existing_content["file_name"]
+        })
 
-    message = download_youtube_audio_as_mp3(youtube_url)
-    print("message:", message)
-    return jsonify({
-    'success': True,
-    'message': message,
-    'transcription': "測試完成",
-    'summary': "測試完成",
-    'file_name': "測試完成"  
-})
-
-
+#     message = download_youtube_audio_as_mp3(youtube_url)
+#     print("message:", message)
+#     return jsonify({
+#     'success': True,
+#     'message': message,
+#     'transcription': "測試完成",
+#     'summary': "測試完成",
+#     'file_name': "測試完成"  
+# })
 
 
     # 語音轉文字
-    segment_files = download_youtube_audio_as_mp3(youtube_url)
+    segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
     transcription = transcribe_audio(segment_files).replace(" ", "\n")
     summary = summarize_text(transcription)
 
