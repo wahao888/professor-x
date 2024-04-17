@@ -271,7 +271,7 @@ def process_video():
 
     # 全面檢查URL是否已經處理過
     checkall_existing_content = content_db.find_one({"url": youtube_url})
-    if existing_content:
+    if checkall_existing_content:
         # 如果找到相關記錄，則直接回傳存在的資料
         return jsonify({
             "success": True,
