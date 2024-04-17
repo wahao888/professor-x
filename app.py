@@ -262,13 +262,25 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
 
-    # 檢查URL是否已經處理過
+    # 針對該用戶檢查URL是否已經處理過
     google_id = session.get('google_id')  # 獲取使用者的Google ID
     existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
     if existing_content:
         # 如果URL已經存在，返回提示
         return jsonify({"success": False, "message": "已經處理過囉！"})
 
+    # 全面檢查URL是否已經處理過
+    checkall_existing_content = content_db.find_one({"url": youtube_url})
+    if existing_content:
+        # 如果找到相關記錄，則直接回傳存在的資料
+        return jsonify({
+            "success": True,
+            "transcription": checkall_existing_content["transcription"],
+            "summary": checkall_existing_content["summary"],
+            "file_name": checkall_existing_content["file_name"]
+        })
+
+    # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url)
     transcription = transcribe_audio(segment_files).replace(" ", "\n")
     summary = summarize_text(transcription)
