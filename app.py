@@ -465,9 +465,9 @@ def payment_cancelled():
 
 
 if __name__ == '__main__':
-    app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
+    # app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
     # app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
+    app.run(host='0.0.0.0', port=8000) # 部署環境使用
 
 
 # 開發階段不使用HTTPS，終端機輸入：
