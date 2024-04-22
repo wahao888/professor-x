@@ -18,9 +18,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import paypal_integration  # 引用另外創建的 PayPal 集成模組
 from google.cloud import secretmanager, storage
 import subprocess
+import logging
 
 app = Flask(__name__)
 CORS(app)
+
+# 設定日誌級別和格式
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='/var/log/myapp.log',  # 指定日誌文件的路徑
+    filemode='a'  # 附加模式
+)
+
 
 # 封裝一個函數來決定從哪裡獲取秘密
 def get_secret(secret_name):
@@ -115,6 +125,7 @@ def index():
             session['name'] = name
             session['user_points'] = user_points
             print("session資訊：",session['google_id'], session['name'], session['user_points'])
+            logging.info(f"User {name} logged in. Points: {user_points}")
 
         else:
             return "無法獲取使用者資訊", 500
@@ -140,30 +151,32 @@ def get_video_info():
             token_per_second = 0.0167  # 每秒0.00167個令牌
             estimated_tokens =  round(duration * token_per_second, 2)
             print("estimated_tokens:", estimated_tokens)
+            logging.info(f"Video info retrieved: Duration: {duration} seconds, Estimated tokens: {estimated_tokens}")
         return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens})
     except Exception as e:
         print("錯誤訊息:", str(e))
+        logging.error(f"Error getting video info: {str(e)}")
         return jsonify({"success": False, "message": "請輸入正確的Youtube網址"}), 500
 
 
 
-def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
-    try:
-        client = storage.Client()
-        bucket = client.get_bucket(gcs_bucket_name)
-        blob = bucket.blob(gcs_file_path)
-        blob.upload_from_filename(local_file_path)
+# def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
+#     try:
+#         client = storage.Client()
+#         bucket = client.get_bucket(gcs_bucket_name)
+#         blob = bucket.blob(gcs_file_path)
+#         blob.upload_from_filename(local_file_path)
 
-        return "Upload successful"
-    except Exception as e:
-        return f"Error during upload to GCS: {str(e)}"
+#         return "Upload successful"
+#     except Exception as e:
+#         return f"Error during upload to GCS: {str(e)}"
 
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
     try:
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        print("tmp file:", os.listdir("/tmp"))
+        # print("tmp file:", os.listdir("/tmp"))
 
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -186,12 +199,15 @@ def download_youtube_audio_as_mp3(youtube_url):
 
         # 確認tmp資料夾的檔案
         print("yt_dlp Download successful, tmp file:", os.listdir("/tmp"))
+        logging.info(f"Downloaded audio from YouTube: {filename}")
+
         # 上傳到GCS
         # result = upload_to_gcs(f"/tmp/{filename}", CLOUD_STORAGE_BUCKET, filename)
         # return result # 測試用
         return segment_audio(filename, 5)  # 假設分段長度為5分鐘
 
     except Exception as e:
+        logging.error(f"Error during download: {str(e)}")
         return f"Error during upload: {str(e)}"
 
 
@@ -215,7 +231,7 @@ def segment_audio(filename, segment_length_minutes):
         part += 1
 
     # os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
-
+    logging.info(f"Audio segmented into {len(segments)} parts.")
     return segments  # 返回分段檔案的路徑列表
 
 # 音訊轉文字
@@ -247,11 +263,14 @@ def transcribe_segment(filename, index):
                 file=audio_file,
             )
             print(f"transcribe_segment {index}: Transcription successful.")
+            logging.info(f"Transcription of segment {index} successful.")
             return index, transcription.text
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
+        logging.error(f"File {filename} not found.")
     except Exception as e:
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
+        logging.error(f"Error processing file {filename}: {e}")
     # finally:
     #     os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
     return index, ""
@@ -265,6 +284,7 @@ def transcribe_audio(segment_files):
             index, transcription_result = future.result()
             transcriptions[index] = transcription_result  # 按索引放置轉寫結果
     print("transcribe_audio: All segments transcribed.")
+    logging.info("All segments transcribed.")
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
@@ -279,7 +299,7 @@ def summarize_text(text):
         model="gpt-3.5-turbo",
     )
     print(f'summarize_text: {response.usage.prompt_tokens} prompt tokens used.')
-
+    logging.info(f"{response.usage.prompt_tokens} prompt tokens used.")
     return response.choices[0].message.content
 
 
@@ -346,8 +366,10 @@ def process_video():
     try:
         content_db.insert_one(content_data)
         print("Content saved successfully.")
+        logging.info("Content saved successfully.")
     except Exception as e:
         print({"success": False, "message": str(e)})
+        logging.error(f"Error saving content: {str(e)}")
 
     return jsonify({
     'success': True,
@@ -370,6 +392,7 @@ def get_video_content():
             "summary": content["summary"]
         })
     else:
+        logging.error("get_video_content() Content not found.")
         return jsonify({"success": False, "message": "Content not found."}), 404
 
 
@@ -378,6 +401,7 @@ def get_video_content():
 def get_user_contents():
     google_id = session.get('google_id')
     if not google_id:
+        logging.error("get_user_contents() User not logged in.")
         return jsonify({"success": False, "message": "尚未有內容"}), 401
 
     contents = content_db.find({"google_id": google_id}).sort("timestamp", -1)
@@ -408,6 +432,7 @@ def get_contents_by_category(category_id):
 def payment():
     user_points = session.get('user_points', 0)  # 如果沒有找到，預設為 0
     name = session.get('name')
+    logging.info(f"User {name} accessing payment page.")
     return render_template('payment.html', user_name=name, user_points=user_points)
 
 # 初始化 PayPal
@@ -420,8 +445,10 @@ def pay(amount):
         if payment_url:
             return redirect(payment_url)
         else:
+            logging.error("Unable to create payment")
             return 'Unable to create payment'
     except Exception as e:
+        logging.error(f"Error creating payment: {str(e)}")
         return str(e)
 
 def calculate_points_based_on_amount(amount):
@@ -448,16 +475,20 @@ def payment_completed():
         if google_id:
             # 更新資料庫中的點數數量
             users_db.update_one({"google_id": google_id}, {"$inc": {"points": points}})
+            logging.info(f"User {google_id} received {points} points.")
             flash(f'Payment successful! You now have {points} additional points.', 'success')
         else:
+            logging.error("User not logged in.")
             flash('You need to log in to receive points.', 'error')
     else:
+        logging.error(f"Payment failed: {message}")
         flash(message, 'error')
 
     return redirect(url_for('index'))
 
 @app.route('/payment_cancelled')
 def payment_cancelled():
+    logging.info("Payment cancelled by the user.")
     flash("Payment cancelled by the user")  # Store the cancellation message
     return redirect(url_for('index'))  # Redirect to the homepage
 
