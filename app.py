@@ -27,7 +27,8 @@ CORS(app)
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='/var/log/myapp.log',  # 指定日誌文件的路徑
+    # filename='/var/log/myapp.log',
+    filename='myapp.log',  # 指定日誌文件的路徑
     filemode='a'  # 附加模式
 )
 
