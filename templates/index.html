@@ -66,27 +66,28 @@
             padding: 20px;
         }
         #progressBar {
-            width: 90%;
-            background-color: #ddd;
             text-align: center;
-            padding: 10px;
+            padding: 20px;
+            margin: 10px;
             font-weight: bold;
             color: #fff;
             background-color: #9e9e9e; /* 淡莫蘭迪綠 */
+            border-radius: 10px; /* 圓角 */
         }
         .transcription-container {
             display: flex;
             flex-direction: column; /* 使子元素垂直排列 */
             justify-content: space-between;
+            min-width: 200px; /* 設定最小寬度 */
             padding: 20px;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
         }
-
         .content-container {
             display: flex;
             justify-content: space-between;
+            min-width: 200px; /* 設定最小寬度 */
             min-height: 77vh;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
@@ -103,6 +104,7 @@
       }
         .list-container {
             display: flex;
+            min-width: 200px; /* 設定最小寬度 */
             flex-direction: column; /* 使子元素垂直排列 */
             align-items: flex-start; /* 確保子元素在橫向上靠左對齊 */
             padding: 20px;
@@ -156,6 +158,8 @@
         }
         .tag {
           display: block; /* 確保每個標籤都是塊級元素 */
+          max-width: 100%; /* 最大寬度不超過其容器 */
+          box-sizing: border-box; /* 包含邊距和內邊距在內的總寬度計算 */
           padding: 10px;
           margin-bottom: 10px;
           background-color: #e0e0e0; /* 淺灰色背景 */
@@ -181,7 +185,41 @@
         display: flex; /* 使用flex來排列預估時間和token消耗 */
         align-items: center; /* 中心對齊 */
         margin-top: 10px; /* 與輸入框之間的間距 */
+        
     }
+    #videoInfo span {
+      padding-right: 20px; /* 右側內邊距 */
+    }
+
+    @media (max-width: 600px) {
+      .header-container, .main-container, .list-container, .transcription-container, .input-container, .content-container {
+          flex-direction: column;
+          width: 100%; /* 讓容器使用可用的全部寬度 */
+          padding: 5px;
+      }
+      #logo, .subscribe-button, .welcome-message {
+          text-align: center;
+          margin: 10px 0;
+      }
+      .subscribe-button, .button {
+          width: 100%; /* 按鈕寬度自適應 */
+          margin: 10px 0;
+      }
+      .content-container > div {
+          width: 100%; /* 子容器寬度自適應 */
+      }
+  }
+
+  @media (max-width: 600px) {
+    body {
+        font-size: 16px; /* 增加基本字體大小 */
+    }
+    .button, .subscribe-button {
+        padding: 15px 30px; /* 增加按鈕的點擊範圍 */
+    }
+}
+
+  
     </style>
 
   </head>
@@ -224,9 +262,9 @@
               <span id="estimatedTokens">預計消耗: 未知</span>
               <span id="videotitle">影片標題: 未知</span>
             </div>
+            <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
           </div>
 
-        <div id="progressBar" style="display: none">處理中...</div>
         
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
