@@ -179,6 +179,8 @@ def download_youtube_audio_as_mp3(youtube_url):
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         # print("tmp file:", os.listdir("/tmp"))
 
+        logging.info(f"Downloading audio from YouTube: {youtube_url}")
+
         ydl_opts = {
             'format': 'bestaudio/best',
             'postprocessors': [{
@@ -310,23 +312,30 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
 
+    logging.info(f"START Processing video: {youtube_url}")
+
     # 針對該用戶檢查URL是否已經處理過
     google_id = session.get('google_id')  # 獲取使用者的Google ID
     existing_content = content_db.find_one({"url": youtube_url, "google_id": google_id})
     if existing_content:
         # 如果URL已經存在，返回提示
+        logging.info("Video already processed.")
         return jsonify({"success": False, "message": "已經處理過囉！"})
 
     # 全面檢查URL是否已經處理過
     checkall_existing_content = content_db.find_one({"url": youtube_url})
     if checkall_existing_content:
         # 如果找到相關記錄，則直接回傳存在的資料
+        logging.info("Video already processed by another user.")
         return jsonify({
             "success": True,
             "transcription": checkall_existing_content["transcription"],
             "summary": checkall_existing_content["summary"],
             "file_name": checkall_existing_content["file_name"]
         })
+    
+    # 沒有處理過的URL
+    logging.info(f"Not yet processed video: {youtube_url}")
 
 #     message = download_youtube_audio_as_mp3(youtube_url)
 #     print("message:", message)
