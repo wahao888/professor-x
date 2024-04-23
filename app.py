@@ -148,12 +148,13 @@ def get_video_info():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
+            video_title = info.get('title', 'DownloadedAudio')
             duration = info.get('duration', 0)  # 獲取影片時長（秒）
             token_per_second = 0.0167  # 每秒0.00167個令牌
             estimated_tokens =  round(duration * token_per_second, 2)
             print("estimated_tokens:", estimated_tokens)
             logging.info(f"Video info retrieved: Duration: {duration} seconds, Estimated tokens: {estimated_tokens}")
-        return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens})
+        return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens, "videoTitle": video_title})
     except Exception as e:
         print("錯誤訊息:", str(e))
         logging.error(f"Error getting video info: {str(e)}")
@@ -361,7 +362,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0][10]
+    file_name = segment_files[0][5:15] if len(segment_files[0])>=15 else segment_files[0][5:]
 
     content_data = {
         "google_id": google_id,

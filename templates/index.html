@@ -222,6 +222,7 @@
             <div id="videoInfo" style="display: flex; align-items: center;">
               <span id="duration" style="margin-right: 10px;">影片時間: 未知</span>
               <span id="estimatedTokens">預計消耗: 未知</span>
+              <span id="videotitle">影片標題: 未知</span>
             </div>
           </div>
 
@@ -284,6 +285,7 @@
           if (data.success) {
               document.getElementById("duration").textContent = `影片時間: ${data.duration} 秒`;
               document.getElementById("estimatedTokens").textContent = `預計消耗: ${data.estimatedTokens} 點`;
+              document.getElementById("videotitle").textContent = `影片標題: ${data.videoTitle}`;
               document.getElementById("videoInfo").style.display = "block";
               document.getElementById("fetchButton").disabled = false;
               document.getElementById("fetchButton").classList.replace("button-grey", "button-green");
