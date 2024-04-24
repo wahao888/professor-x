@@ -192,16 +192,22 @@ def download_youtube_audio_as_mp3(youtube_url):
         }
 
         try:
+            logging.debug("Preparing to extract video info.")
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
-                video_title = info.get('title', 'DownloadedAudio')
-                current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"{video_title}_{current_time}.mp3"
-                ydl_opts['outtmpl'] = "/tmp/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
+            logging.debug("Video info extracted.")
 
+            logging.debug("Setting up filename and template for download.")
+            video_title = info.get('title', 'DownloadedAudio')
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{video_title}_{current_time}.mp3"
+            ydl_opts['outtmpl'] = "/tmp/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
+
+            logging.debug("Starting download of the video.")
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([youtube_url])
-            logging.info(f"Downloaded audio from YouTube: {filename}")
+            logging.debug(f"Download completed. File saved as: {filename}")
+
         except Exception as e:
             logging.error("Failed to download or process video", exc_info=True)
 
