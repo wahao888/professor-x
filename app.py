@@ -181,7 +181,7 @@ def download_youtube_audio_as_mp3(youtube_url):
         # print("tmp file:", os.listdir("/tmp"))
         
         # 測試創建檔案
-        create_test_file()
+        # create_test_file()
 
         logging.info(f"Downloading audio from YouTube: {youtube_url}")
 
@@ -206,7 +206,7 @@ def download_youtube_audio_as_mp3(youtube_url):
             video_title = info.get('title', 'DownloadedAudio')
             current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{video_title}_{current_time}.mp3"
-            ydl_opts['outtmpl'] = "/download/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
+            ydl_opts['outtmpl'] = "./download/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
 
             logging.debug("Starting download of the video.")
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -230,7 +230,7 @@ def download_youtube_audio_as_mp3(youtube_url):
 # 音訊分段
 def segment_audio(filename, segment_length_minutes):
     segment_length_ms = segment_length_minutes * 60 * 1000
-    audio = AudioSegment.from_file(os.path.join("/download", filename))
+    audio = AudioSegment.from_file("./download/" + filename)
     
     segments = []
     start = 0
@@ -239,7 +239,7 @@ def segment_audio(filename, segment_length_minutes):
         end = start + segment_length_ms
         segment = audio[start:end]
         segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3" # [:-4]移除檔案擴展名
-        full_segment_path = os.path.join("/download", segment_filename)
+        full_segment_path = "./download/" + segment_filename
         segment.export(full_segment_path, format="mp3")
         segments.append(full_segment_path)   # 將檔案路徑加入列表
         start += segment_length_ms
