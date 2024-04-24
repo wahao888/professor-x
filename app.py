@@ -206,7 +206,7 @@ def download_youtube_audio_as_mp3(youtube_url):
             video_title = info.get('title', 'DownloadedAudio')
             current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{video_title}_{current_time}.mp3"
-            ydl_opts['outtmpl'] = "./download/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
+            ydl_opts['outtmpl'] = "/download/" + filename[:-4]  # 更新選項中的檔案名模板，包含副檔名
 
             logging.debug("Starting download of the video.")
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
