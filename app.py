@@ -519,7 +519,7 @@ def payment_cancelled():
 def create_test_file():
     # 確保路徑是正確的，這裡使用的是絕對路徑
     # directory = '/home/ubuntu/professor-x/download'
-    directory = '/download'
+    directory = './download'
     filename = 'test.txt'
     filepath = os.path.join(directory, filename)
 
