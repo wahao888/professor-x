@@ -189,6 +189,8 @@ def download_youtube_audio_as_mp3(youtube_url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
+            'noplaylist': True,  # 不要下載播放清單
+            'verbose': True  # 詳細日誌
         }
 
         try:
