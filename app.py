@@ -127,6 +127,8 @@ def index():
             session['user_points'] = user_points
             print("session資訊：",session['google_id'], session['name'], session['user_points'])
             logging.info(f"User {name} logged in. Points: {user_points}")
+            print("Current user:", os.getlogin())
+            logging.info(f"Current user: {os.getlogin()}")
 
         else:
             return "無法獲取使用者資訊", 500
