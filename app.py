@@ -185,6 +185,8 @@ def sanitize_filename(filename):
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
+    os.umask(0o002)  # 設置 umask 以確保新創建的文件具有適當的群組寫入權限
+
     try:
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         # print("tmp file:", os.listdir("/tmp"))
