@@ -173,6 +173,14 @@ def get_video_info():
 #     except Exception as e:
 #         return f"Error during upload to GCS: {str(e)}"
 
+# 處理檔案名稱
+def sanitize_filename(filename):
+    # 將空格替換為下劃線
+    filename = filename.replace(" ", "_")
+    # 移除或替換特殊字符，只保留字母、數字、下劃線和點
+    filename = re.sub(r'[^a-zA-Z0-9_\.-]', '', filename)
+    return filename
+
 
 # 下載 YouTube 音訊
 def download_youtube_audio_as_mp3(youtube_url):
@@ -228,25 +236,33 @@ def download_youtube_audio_as_mp3(youtube_url):
 
 # 音訊分段
 def segment_audio(filename, segment_length_minutes):
+    download_dir = "./download"
     segment_length_ms = segment_length_minutes * 60 * 1000
-    audio = AudioSegment.from_file("./download/" + filename)
-    
-    segments = []
-    start = 0
-    part = 1
-    while start < len(audio):
-        end = start + segment_length_ms
-        segment = audio[start:end]
-        segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3" # [:-4]移除檔案擴展名
-        full_segment_path = "./download/" + segment_filename
-        segment.export(full_segment_path, format="mp3")
-        segments.append(full_segment_path)   # 將檔案路徑加入列表
-        start += segment_length_ms
-        part += 1
+    full_path = os.path.join(download_dir, filename)  # 使用 os.path.join 確保路徑正確
 
-    # os.remove(filename)  # 在完成所有分段工作後刪除原始檔案
-    logging.info(f"Audio segmented into {len(segments)} parts.")
-    return segments  # 返回分段檔案的路徑列表
+    try:
+        audio = AudioSegment.from_file(full_path)
+        
+        segments = []
+        start = 0
+        part = 1
+        while start < len(audio):
+            end = start + segment_length_ms
+            segment = audio[start:end]
+            segment_filename = f"{filename[:-4]}_{str(part).zfill(2)}.mp3" # [:-4]移除檔案擴展名
+            full_segment_path = os.path.join(download_dir, segment_filename)
+            print(f"full_segment_path: {full_segment_path}")
+            segment.export(full_segment_path, format="mp3")
+            segments.append(full_segment_path)   # 將檔案路徑加入列表
+            start += segment_length_ms
+            part += 1
+
+        os.remove(full_path)  # 在完成所有分段工作後刪除原始檔案
+        logging.info(f"Audio segmented into {len(segments)} parts.")
+        return segments  # 返回分段檔案的路徑列表
+    except Exception as e:
+        logging.error(f"Error processing file {filename}: {str(e)}")
+        return []
 
 # 音訊轉文字
 # def transcribe_audio(segment_files):
@@ -285,8 +301,8 @@ def transcribe_segment(filename, index):
     except Exception as e:
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
         logging.error(f"Error processing file {filename}: {e}")
-    # finally:
-    #     os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
+    finally:
+        os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
     return index, ""
 
 def transcribe_audio(segment_files):
@@ -361,6 +377,7 @@ def process_video():
 
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
+    print("segment_files:", segment_files)
     transcription = transcribe_audio(segment_files).replace(" ", "\n")
     summary = summarize_text(transcription)
 
@@ -372,7 +389,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0][5:15] if len(segment_files[0])>=15 else segment_files[0][5:]
+    file_name = segment_files[0].split("/")[-1][:10]  # 從路徑中提取檔案名稱
 
     content_data = {
         "google_id": google_id,
