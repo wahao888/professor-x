@@ -118,14 +118,16 @@
             display: flex;
             flex-direction: column; /* 指定子元素垂直排列 */
             justify-content: space-between;
-            padding: 20px;
+            padding-left: 20px;
+            padding-bottom: 20px;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
             margin-bottom: 20px;
         }
-        .url-input-container { /* 新增的類別為了 flex 排版 */
+        .url-input-container, .upload-input-container { /* 新增的類別為了 flex 排版 */
           display: flex;
+          align-items: center; /* 垂直居中對齊 */
           flex-grow: 1; /* 保證輸入框可以擴展佔據多餘空間 */
           margin-bottom: 10px; /* 和預估信息之間的間距 */
       }
@@ -250,6 +252,7 @@
       </div>
 
       <div id="transcriptionContent" class="transcription-container">
+        <div>
         <div class="input-container">
           <h1>YouTube內容擷取工具</h1>
           <div class="url-input-container">
@@ -262,21 +265,23 @@
             <span id="estimatedTokens">預計消耗: 未知</span>
             <span id="videotitle">影片標題: 未知</span>
           </div>
+        </div>
           
-          <h2>上傳音訊</h2>
+        <div class="input-container">
+          <h1>上傳音訊</h1>
           <form id="fileUploadForm" method="post" enctype="multipart/form-data">
             <input type="file" name="audioFile" id="audioFileInput" accept=".mp3">
             <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" >上傳檔案</button>
             <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled>音訊轉文字</button>
-          </form>
           <div id="fileInfo" style="display: flex; align-items: center;">
             <span id="audioLength">音訊長度: 未知</span>
             <span id="estimatedCost">預計消耗: 未知</span>
             <span id="fileName">檔案名稱: 未知</span>
           </div>
-          <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
-
+        </div>
+        <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
       </div>
+
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
