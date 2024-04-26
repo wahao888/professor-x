@@ -441,7 +441,7 @@ def process_audio():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0].split("/")[-1][:10]  # 從路徑中提取檔案名稱
+    file_name = segment_files[0].split("/")[-1][:-3]  # 從路徑中提取檔案名稱
 
     content_data = {
         "google_id": google_id,

@@ -57,6 +57,7 @@
         }
         .list-container, .transcription-container {
           margin-top: 10px; 
+          margin-right: 10px;
         }
         body {
             font-family: 'Arial', sans-serif;
@@ -167,6 +168,9 @@
           background-color: #e0e0e0; /* 淺灰色背景 */
           border-radius: 5px; /* 圓角 */
           cursor: pointer; /* 鼠標懸停時顯示手型光標 */
+          overflow: hidden; /* 避免長標籤溢出 */
+          word-wrap: break-word; /* 長單詞自動換行 */
+          word-break: break-all; /* 斷開單詞，以確保內容不會溢出容器 */
       }
       .tag:hover {
           background-color: #d0d0d0; /* 鼠標懸停時的背景色 */
