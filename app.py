@@ -19,6 +19,7 @@ import paypal_integration  # 引用另外創建的 PayPal 集成模組
 from google.cloud import secretmanager, storage
 import subprocess
 import logging
+from werkzeug.utils import secure_filename # 用於安全地處理文件名
 
 app = Flask(__name__)
 CORS(app)
@@ -138,7 +139,7 @@ def index():
 
 
 
-
+# 從youtube獲取音訊資訊
 @app.route('/get_video_info', methods=['POST'])
 def get_video_info():
     data = request.json
@@ -161,6 +162,20 @@ def get_video_info():
         logging.error(f"Error getting video info: {str(e)}")
         return jsonify({"success": False, "message": "請輸入正確的Youtube網址"}), 500
 
+# 上傳音訊檔案並取得資訊
+@app.route('/upload_file', methods=['POST'])
+def upload_file():
+    file = request.files['audioFile']
+    filename = secure_filename(file.filename)
+    download_dir = "./download"
+    file_path = os.path.join(download_dir, filename)
+    file.save(file_path)
+    audio_length = len(AudioSegment.from_file(file_path)) / 1000.0
+    estimated_cost = round(audio_length * 0.0167, 2)
+    print("audio_length:", audio_length)
+    print("estimated_cost:", estimated_cost)
+    print("filename:", filename)
+    return jsonify(success=True, fileName=filename, audioLength=audio_length, estimatedCost=estimated_cost)
 
 
 # def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
@@ -321,7 +336,6 @@ def transcribe_audio(segment_files):
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
-
 # 文字摘要
 def summarize_text(text):
     response = client.chat.completions.create(
@@ -336,12 +350,11 @@ def summarize_text(text):
     return response.choices[0].message.content
 
 
-# API
+# youtube音訊轉文字
 @app.route('/process_video', methods=['POST'])
 def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
-
     logging.info(f"START Processing video: {youtube_url}")
 
     # 針對該用戶檢查URL是否已經處理過
@@ -363,20 +376,8 @@ def process_video():
             "summary": checkall_existing_content["summary"],
             "file_name": checkall_existing_content["file_name"]
         })
-    
     # 沒有處理過的URL
     logging.info(f"Not yet processed video: {youtube_url}")
-
-#     message = download_youtube_audio_as_mp3(youtube_url)
-#     print("message:", message)
-#     return jsonify({
-#     'success': True,
-#     'message': message,
-#     'transcription': "測試完成",
-#     'summary': "測試完成",
-#     'file_name': "測試完成"  
-# })
-
 
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
@@ -418,6 +419,56 @@ def process_video():
     'summary': summary,
     'file_name': file_name  
 })
+
+
+# 上傳的mp3檔案轉文字
+@app.route('/process_audio', methods=['POST'])
+def process_audio():
+    data = request.json
+    filename = data.get('fileName')
+
+    # 語音轉文字
+    segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
+    print("segment_files:", segment_files)
+    transcription = transcribe_audio(segment_files).replace(" ", "\n")
+    summary = summarize_text(transcription)
+
+    # 處理重點整理換行
+    summary = "\n" + summary  # 在開頭添加換行符，以處理首個條目
+    summary = re.sub(r"\n(\d+\.)", r"\n\1", summary)  # 在每個數字點前加上換行符
+    summary = summary.lstrip("\n")  # 移除開頭多餘的換行符
+
+    # category_id = data.get('categoryId') # 分類
+    share = data.get('share', False)  # 預設不分享
+    google_id = session.get('google_id') # 獲取使用者的Google ID
+    file_name = segment_files[0].split("/")[-1][:10]  # 從路徑中提取檔案名稱
+
+    content_data = {
+        "google_id": google_id,
+        "file_name": file_name,
+        "url": "user_upload",
+        "category_id": "category_id", # 暫時沒有分類ID
+        "transcription": transcription,
+        "summary": summary,
+        "shared": share,
+        "timestamp": datetime.now()
+    }
+    try:
+        content_db.insert_one(content_data)
+        print("Content saved successfully.")
+        logging.info("Content saved successfully.")
+    except Exception as e:
+        print({"success": False, "message": str(e)})
+        logging.error(f"Error saving content: {str(e)}")
+
+    return jsonify({
+    'success': True,
+    'transcription': transcription,
+    'summary': summary,
+    'file_name': file_name  
+    })
+
+
 
 # 點擊標籤顯示內容
 @app.route('/get_video_content', methods=['POST'])

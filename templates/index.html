@@ -181,13 +181,13 @@
           color: #ffffff;
           cursor: not-allowed; /* 當滑鼠懸停時顯示禁止符號 */
       }
-      #videoInfo {
+      #videoInfo, #fileInfo{
         display: flex; /* 使用flex來排列預估時間和token消耗 */
         align-items: center; /* 中心對齊 */
         margin-top: 10px; /* 與輸入框之間的間距 */
         
     }
-    #videoInfo span {
+    #videoInfo span, #fileInfo span {
       padding-right: 20px; /* 右側內邊距 */
     }
 
@@ -250,22 +250,33 @@
       </div>
 
       <div id="transcriptionContent" class="transcription-container">
-        <h1>YouTube內容擷取工具</h1>
-          <div class="input-container">
-            <div class="url-input-container">
-              <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
-              <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預估消耗</button>
-              <button id="fetchButton" onclick="fetchHighlights()" class="button-grey" disabled=true >音訊轉文字</button>
-            </div>
-            <div id="videoInfo" style="display: flex; align-items: center;">
-              <span id="duration" style="margin-right: 10px;">影片時間: 未知</span>
-              <span id="estimatedTokens">預計消耗: 未知</span>
-              <span id="videotitle">影片標題: 未知</span>
-            </div>
-            <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
+        <div class="input-container">
+          <h1>YouTube內容擷取工具</h1>
+          <div class="url-input-container">
+            <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
+            <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預估消耗</button>
+            <button id="fetchButton" onclick="fetchHighlights()" class="button-grey" disabled=true >音訊轉文字</button>
           </div>
+          <div id="videoInfo" style="display: flex; align-items: center;">
+            <span id="duration">影片時間: 未知</span>
+            <span id="estimatedTokens">預計消耗: 未知</span>
+            <span id="videotitle">影片標題: 未知</span>
+          </div>
+          
+          <h2>上傳音訊</h2>
+          <form id="fileUploadForm" method="post" enctype="multipart/form-data">
+            <input type="file" name="audioFile" id="audioFileInput" accept=".mp3">
+            <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" >上傳檔案</button>
+            <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled>音訊轉文字</button>
+          </form>
+          <div id="fileInfo" style="display: flex; align-items: center;">
+            <span id="audioLength">音訊長度: 未知</span>
+            <span id="estimatedCost">預計消耗: 未知</span>
+            <span id="fileName">檔案名稱: 未知</span>
+          </div>
+          <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
 
-        
+      </div>
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
@@ -309,7 +320,6 @@
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
-
       const url = document.getElementById("youtubeUrl").value;
       fetch("/get_video_info", {
           method: "POST",
@@ -339,8 +349,54 @@
       });
     }
 
+    // 檢查是否選擇了音訊文件
+    document.addEventListener("DOMContentLoaded", function() {
+      var fileInput = document.getElementById('audioFileInput');
+      var uploadButton = document.getElementById('uploadButton');
+  
+      fileInput.addEventListener('change', function() {
+          if (fileInput.files.length > 0) {
+              uploadButton.disabled = false;  // 啟用上傳按鈕
+              uploadButton.classList.replace("button-grey", "button-green"); // 更改按鈕風格
+          } else {
+              uploadButton.disabled = true;  // 禁用上傳按鈕
+              uploadButton.classList.replace("button-green", "button-grey"); // 更改按鈕風格
+          }
+      });
+  });
+  
 
-    // 從後端獲取音訊轉文字的摘要
+
+    // 上傳檔案取得音訊長度和預估消耗
+    function uploadFile() {
+      const button = document.getElementById('uploadButton');
+      button.textContent = "處理中..."; // 更改按鈕文字
+      button.disabled = true; // 禁用按鈕
+      button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
+
+      var formData = new FormData(document.getElementById('fileUploadForm'));
+      fetch('/upload_file', {
+          method: 'POST',
+          body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('audioLength').textContent = `音訊長度: ${data.audioLength} 秒`;
+        document.getElementById('estimatedCost').textContent = `預計消耗: ${data.estimatedCost} 點`;
+        document.getElementById('fileName').textContent = `檔案名稱: ${data.fileName}`;
+        document.getElementById("fileInfo").style.display = "block";
+        document.getElementById("transcribeButton").disabled = false;
+        document.getElementById("transcribeButton").classList.replace("button-grey", "button-green");
+        button.textContent = "上傳檔案"; // 更改回原來的按鈕文字
+        button.disabled = false; // 啟用按鈕
+        button.classList.replace("button-grey", "button-green"); // 更改按鈕成綠色
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+
+
+    // Youtube音訊轉文字的摘要
       function fetchHighlights() {
         const button = document.getElementById('fetchButton');
         button.textContent = "處理中..."; // 更改按鈕文字
@@ -453,6 +509,66 @@
         })
         .catch(error => console.error('Error:', error));
     }
+
+
+    // 用戶上傳mp3獲取音訊內容
+    function transcribeAudio() {
+      const button = document.getElementById('transcribeButton');
+      button.textContent = "處理中..."; // 更改按鈕文字
+      button.disabled = true; // 禁用按鈕
+      button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
+  
+      const progressBar = document.getElementById("progressBar");
+      progressBar.style.display = "block"; // 顯示進度條
+  
+      const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
+      fetch('/process_audio', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileName: fileName }), // 向後端發送檔案名稱
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              document.getElementById("transcription").textContent = data.transcription;
+              document.getElementById("summary").textContent = data.summary;
+  
+              // 創建新標籤並添加到左側列表
+              const tagsContainer = document.getElementById("tagsContainer");
+              const newTag = document.createElement("div");
+              newTag.textContent = data.file_name; // 顯示檔案名稱
+              newTag.setAttribute("url", data.file_name); // 用檔案名稱作為唯一標識
+              newTag.className = "tag";
+              newTag.onclick = function() { displayVideoContent(this.getAttribute("url")); };
+              // 將新標籤插入到容器的最前面
+              if (tagsContainer.firstChild) {
+                  tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
+              } else {
+                  tagsContainer.appendChild(newTag);
+              }
+  
+              // 將結果存儲到localStorage
+              localStorage.setItem("transcription", data.transcription);
+              localStorage.setItem("summary", data.summary);
+          } else {
+              alert(data.message);
+          }
+      })
+      .catch(error => {
+          console.error("Error:", error);
+      })
+      .finally(() => {
+          // 不管請求成功或失敗，最後都隱藏進度條
+          progressBar.style.display = "none";
+          // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
+          button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+          button.disabled = true; // 保持按鈕為禁用狀態
+          button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
+      });
+  }
+  
 
 
       // 點擊標籤顯示相應的影片內容
