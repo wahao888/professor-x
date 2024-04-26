@@ -169,12 +169,14 @@ def upload_file():
     filename = secure_filename(file.filename)
     download_dir = "./download"
     file_path = os.path.join(download_dir, filename)
+    logging.info(f"Uploading file: {filename}")
     file.save(file_path)
     audio_length = len(AudioSegment.from_file(file_path)) / 1000.0
     estimated_cost = round(audio_length * 0.0167, 2)
     print("audio_length:", audio_length)
     print("estimated_cost:", estimated_cost)
     print("filename:", filename)
+    logging.info(f"File uploaded: {filename}, Length: {audio_length} seconds, Estimated cost: {estimated_cost} tokens")
     return jsonify(success=True, fileName=filename, audioLength=audio_length, estimatedCost=estimated_cost)
 
 
