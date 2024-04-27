@@ -6,6 +6,19 @@
     <title>Professor X</title>
 
     <style>
+      .flash-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: none;
+        padding: 10px;
+        background-color: green; /* or other colors based on message type */
+        color: white;
+        border-radius: 5px;
+      }
+      
+
         .header-container {
             display: flex;
             align-items: center;
@@ -249,6 +262,11 @@
         {% endif %}
     {% endwith %}
 
+    <div id="flash-message" class="flash-container">
+      <!-- 訊息會被插入這裡 -->
+    </div>
+    
+
     <div class="header-container">
       <a id="logo" href="/">Professor X</a>
       <div class="header-right-container">
@@ -314,6 +332,17 @@
     
     
     <script>
+      // 關閉閃爍訊息
+      window.onload = function() {
+        let flashMessage = document.getElementById('flash-message');
+        flashMessage.style.display = 'block';
+        setTimeout(function() {
+          flashMessage.style.display = 'none';
+        }, 5000);
+      };
+      
+
+
       // 驗證YouTube URL
       document.addEventListener("DOMContentLoaded", function () {
         var youtubeUrlInput = document.getElementById("youtubeUrl");
