@@ -561,13 +561,13 @@ def calculate_points_based_on_amount(amount):
 def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
-    success, message = paypal_integration.execute_payment(payment_id, payer_id)
+    success, payment_details = paypal_integration.execute_payment(payment_id, payer_id)
     logging.info(f"payment_id: {payment_id}, payer_id: {payer_id}")
-    logging.info(f"Payment completed: {success}, {message}")
+    logging.info(f"Payment completed: {success}, {payment_details}")
 
     if success:
         # 取得購買的點數數量
-        actual_paid_amount = message['transactions'][0]['amount']['total']
+        actual_paid_amount = payment_details['transactions'][0]['amount']['value']
         logging.info(f"Actual paid amount: {actual_paid_amount}")
 
         # 計算點數數量，這需要您根據實際方案自行計算
