@@ -21,6 +21,7 @@ import subprocess
 import logging
 from werkzeug.utils import secure_filename # 用於安全地處理文件名
 import json
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -533,6 +534,23 @@ def payment():
 # 初始化 PayPal
 paypal_integration.init_paypal(paypal_client_id, paypal_secret)
 
+def execute_payment(payment_id, payer_id, access_token):
+    url = f"https://api.paypal.com/v1/payments/payment/{payment_id}/execute"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    payload = {"payer_id": payer_id}
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return True, response.json()  # 返回成功和支付詳情
+    else:
+        return False, response.text  # 返回失敗和錯誤信息
+
+
+
+
+
 @app.route('/pay/<amount>')
 def pay(amount):
     try:
@@ -563,11 +581,13 @@ def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
     success, payment_details = paypal_integration.execute_payment(payment_id, payer_id)
-    # payment_details = json.loads(payment_details)
     logging.info(f"payment_id: {payment_id}, payer_id: {payer_id}")
     logging.info(f"Payment completed: {success}, {payment_details}")
 
     if success:
+        if isinstance(payment_details, str):
+            payment_details = json.loads(payment_details)  # 確保將 JSON 字符串轉換為字典
+
         actual_paid_amount = payment_details['transactions'][0]['amount']['total']
         logging.info(f"Actual paid amount: {actual_paid_amount}")
         points = calculate_points_based_on_amount(actual_paid_amount)  # 計算應增加的點數
