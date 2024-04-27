@@ -20,6 +20,7 @@ from google.cloud import secretmanager, storage
 import subprocess
 import logging
 from werkzeug.utils import secure_filename # 用於安全地處理文件名
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -562,6 +563,7 @@ def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
     success, payment_details = paypal_integration.execute_payment(payment_id, payer_id)
+    payment_details = json.loads(payment_details)
     logging.info(f"payment_id: {payment_id}, payer_id: {payer_id}")
     logging.info(f"Payment completed: {success}, {payment_details}")
 
@@ -582,8 +584,8 @@ def payment_completed():
             logging.error("User not logged in.")
             flash('You need to log in to receive points.', 'error')
     else:
-        logging.error(f"Payment failed: {message}")
-        flash(message, 'error')
+        logging.error(f"Payment failed: {payment_details}")
+        flash(payment_details, 'error')
 
     return redirect(url_for('index'))
 
