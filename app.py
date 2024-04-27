@@ -536,6 +536,7 @@ paypal_integration.init_paypal(paypal_client_id, paypal_secret)
 def pay(amount):
     try:
         payment_url = paypal_integration.create_payment(app, amount)  # 接受金額作為參數
+        logging.info(f"amount: {amount}")
         if payment_url:
             return redirect(payment_url)
         else:
@@ -553,7 +554,7 @@ def calculate_points_based_on_amount(amount):
         '20': 3000, # 假設 $20 購買 3000 點
         '30': 6000, # 假設 $30 購買 6000 點
     }
-    return plans.get(amount, 0)  # 返回相對應的點數，如果金額不匹配則
+    return plans.get(amount, 0)
 
 
 @app.route('/payment_completed')
@@ -561,11 +562,16 @@ def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
     success, message = paypal_integration.execute_payment(payment_id, payer_id)
+    logging.info(f"payment_id: {payment_id}, payer_id: {payer_id}")
+    logging.info(f"Payment completed: {success}, {message}")
+
     if success:
         # 取得購買的點數數量
-        amount = request.args.get('amount')
+        actual_paid_amount = message['transactions'][0]['amount']['total']
+        logging.info(f"Actual paid amount: {actual_paid_amount}")
+
         # 計算點數數量，這需要您根據實際方案自行計算
-        points = calculate_points_based_on_amount(amount)
+        points = calculate_points_based_on_amount(actual_paid_amount)
         google_id = session.get('google_id')
         if google_id:
             # 更新資料庫中的點數數量
