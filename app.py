@@ -563,7 +563,7 @@ def payment_completed():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
     success, payment_details = paypal_integration.execute_payment(payment_id, payer_id)
-    payment_details = json.loads(payment_details)
+    # payment_details = json.loads(payment_details)
     logging.info(f"payment_id: {payment_id}, payer_id: {payer_id}")
     logging.info(f"Payment completed: {success}, {payment_details}")
 
