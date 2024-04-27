@@ -550,10 +550,10 @@ def pay(amount):
 def calculate_points_based_on_amount(amount):
     # 定義每個計劃的點數
     plans = {
-        '1': 100,  # 假設 $1 購買 100 點
-        '10': 1200, # 假設 $10 購買 1200 點
-        '20': 3000, # 假設 $20 購買 3000 點
-        '30': 6000, # 假設 $30 購買 6000 點
+        '1.00': 100.00,  # 假設 $1 購買 100 點
+        '10.00': 1200.00, # 假設 $10 購買 1200 點
+        '20.00': 3000.00, # 假設 $20 購買 3000 點
+        '30.00': 6000.00, # 假設 $30 購買 6000 點
     }
     return plans.get(amount, 0)
 
@@ -568,25 +568,30 @@ def payment_completed():
     logging.info(f"Payment completed: {success}, {payment_details}")
 
     if success:
-        # 取得購買的點數數量
-        actual_paid_amount = payment_details['transactions'][0]['amount']['value']
+        actual_paid_amount = payment_details['transactions'][0]['amount']['total']
         logging.info(f"Actual paid amount: {actual_paid_amount}")
-
-        # 計算點數數量，這需要您根據實際方案自行計算
-        points = calculate_points_based_on_amount(actual_paid_amount)
+        points = calculate_points_based_on_amount(actual_paid_amount)  # 計算應增加的點數
         google_id = session.get('google_id')
+        
         if google_id:
-            # 更新資料庫中的點數數量
-            users_db.update_one({"google_id": google_id}, {"$inc": {"points": points}})
-            logging.info(f"User {google_id} received {points} points.")
-            flash(f'Payment successful! You now have {points} additional points.', 'success')
+            # 使用 MongoDB 的 $inc 更新操作來增加點數
+            result = users_db.update_one(
+                {"google_id": google_id},
+                {"$inc": {"points": points}}
+            )
+            
+            if result.modified_count > 0:
+                logging.info(f"User {google_id} received {points} points.")
+                flash(f'Payment successful! You now have {points} additional points.', 'success')
+            else:
+                logging.error("Failed to update user points.")
+                flash('Error updating your points. Please contact support.', 'error')
         else:
             logging.error("User not logged in.")
             flash('You need to log in to receive points.', 'error')
     else:
-        logging.error(f"Payment failed: {payment_details}")
-        flash(payment_details, 'error')
-
+        flash('Payment failed. Please try again.', 'error')
+    
     return redirect(url_for('index'))
 
 @app.route('/payment_cancelled')
