@@ -328,10 +328,18 @@
     
     
     <script>
-      // 使用 JavaScript 設定計時器，在 5 秒後隱藏訊息
-      window.setTimeout(function() {
-        document.getElementById('flash-message').style.display = 'none';
-      }, 5000);
+      // flash跳出訊息
+      document.addEventListener("DOMContentLoaded", function () {
+        var flashMessageContainer = document.getElementById('flash-message');
+        // 檢查是否有 flash 訊息需要顯示
+        if (flashMessageContainer.innerText.trim() !== "") {
+          flashMessageContainer.style.display = 'block'; // 使訊息可見
+          // 設定計時器，在 5 秒後隱藏訊息
+          window.setTimeout(function() {
+            flashMessageContainer.style.display = 'none';
+          }, 5000);
+        }
+      });
       
 
       // 驗證YouTube URL
