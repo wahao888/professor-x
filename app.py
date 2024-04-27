@@ -1,6 +1,6 @@
 #app.py
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 import yt_dlp
 from pydub import AudioSegment
 import os
@@ -548,6 +548,7 @@ def pay(amount):
 def calculate_points_based_on_amount(amount):
     # 定義每個計劃的點數
     plans = {
+        '1': 100,  # 假設 $1 購買 100 點
         '10': 1200, # 假設 $10 購買 1200 點
         '20': 3000, # 假設 $20 購買 3000 點
         '30': 6000, # 假設 $30 購買 6000 點
