@@ -270,7 +270,7 @@
       <a id="logo" href="/">Professor X</a>
       <div class="header-right-container">
         <div class="welcome-message">歡迎，{{ user_name }}！</div>
-        <div class="user-points">您目前有 {{ user_points }} 點</div>
+        <div id="user-points" class="user-points">您目前有 {{ user_points }} 點</div>
         <a href="/payment" class="subscribe-button">訂閱</a>
       </div>
     </div>
@@ -473,7 +473,7 @@
             console.log(data.message);
             progressBar.style.display = "none"; // 隱藏進度條
             // 更新點數顯示
-            const pointsDisplay = document.querySelector('.user-points');
+            const pointsDisplay = document.getElementById("user-points");
             pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
 
             // 創建新標籤並添加到左側列表
@@ -588,7 +588,7 @@
               document.getElementById("transcription").textContent = data.transcription;
               document.getElementById("summary").textContent = data.summary;
               // 更新點數顯示
-              const pointsDisplay = document.querySelector('.user-points');
+              const pointsDisplay = document.getElementById("user-points");
               pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
   
               // 創建新標籤並添加到左側列表
