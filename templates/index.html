@@ -472,6 +472,9 @@
             document.getElementById("summary").textContent = data.summary;
             console.log(data.message);
             progressBar.style.display = "none"; // 隱藏進度條
+            // 更新點數顯示
+            const pointsDisplay = document.querySelector('.user-points');
+            pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
 
             // 創建新標籤並添加到左側列表
             const tagsContainer = document.getElementById("tagsContainer");
@@ -584,6 +587,9 @@
           if (data.success) {
               document.getElementById("transcription").textContent = data.transcription;
               document.getElementById("summary").textContent = data.summary;
+              // 更新點數顯示
+              const pointsDisplay = document.querySelector('.user-points');
+              pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
   
               // 創建新標籤並添加到左側列表
               const tagsContainer = document.getElementById("tagsContainer");
