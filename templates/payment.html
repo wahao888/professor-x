@@ -20,7 +20,6 @@
       font-size: 2em; /* Logo 的大小，'em'相對於當前字體大小 */
       color: #976666;
       font-weight: bold;
-      text-shadow: 2px 2px 3px #4F493F;
       padding: 5px 10px;
       text-decoration: none; /* 移除下劃線 */
       transition: transform 0.3s ease; /* 添加滑鼠懸停動畫*/
@@ -142,8 +141,10 @@
         
         <div class="card">
           <h2 class="title">免費方案</h2>
-          <p class="description">每日獲得15點，每個影片最多轉錄5分鐘，每日總計最多15分鐘。</p>
+          <p class="description">每日可免費轉錄 3 部音訊，每部 5 分鐘。</p>
+          <a href="https://professor-x.lillian-ai.com/index" style="text-decoration: none;">
           <button class="btn">選擇免費方案</button>
+          </a>
         </div>
         
         <!-- 月付方案 -->
@@ -154,7 +155,7 @@
                     <h3>基本方案 17% off</h3>
                         <p class="description">包含每月1200點 (20小時)，適合偶爾需要轉錄的個人使用者。</p>
                         <div class="price-button-container">
-                            <div class="price">$10 美元 <br>（約台幣300元）</div>
+                            <div class="price">$10 美元/月</div>
                             <form action="/pay/10" method="get">
                               <button class="btn" type="submit">立即訂閱</button>
                             </form>
@@ -164,7 +165,7 @@
                     <h3>標準方案 33% off</h3>
                         <p class="description">提供每月3000點 (50小時)，適合頻繁使用轉錄服務的用戶。</p>
                         <div class="price-button-container">
-                            <div class="price">$20 美元 <br>（約台幣600元）</div>
+                            <div class="price">$20 美元/月</div>
                             <form action="/pay/20" method="get">
                               <button class="btn" type="submit">立即訂閱</button>
                             </form>
@@ -174,7 +175,7 @@
                     <h3>專業方案 50% off</h3>
                         <p class="description">包含每月6000點 (100小時)，適合對轉錄有高需求的專業用戶。</p>
                         <div class="price-button-container">
-                            <div class="price">$30 美元 <br>（約台幣900元）</div>
+                            <div class="price">$30 美元/月</div>
                             <form action="/pay/30" method="get">
                                 <button class="btn" type="submit">立即訂閱</button>
                             </form>
@@ -185,16 +186,16 @@
           
         
         <div class="card">
-          <h2 class="title">購買點數</h2>
-          <div class="price">$1 美元 <br>（約台幣30元）</div>
-          <p class="description">購買100點（100分鐘），隨時在我們的服務中使用。</p>
+          <h2 class="title">購買點數 100 點</h2>
+          <div class="price">$1 美元</div>
+          <p class="description">每 1 點可轉錄 1 分鐘的音訊，購買100點（100分鐘），隨時在我們的服務中使用。</p>
           <form action="/pay/1" method="get">
               <button class="btn" type="submit">立即購買</button>
           </form>
         </div>
         
         <div class="footer">
-          <a href="/" style="text-decoration: none;">
+          <a href="https://professor-x.lillian-ai.com/index" style="text-decoration: none;">
               <button class="btn">返回首頁</button>
           </a>
         </div>
