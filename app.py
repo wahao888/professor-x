@@ -158,6 +158,7 @@ def get_video_info():
             duration = info.get('duration', 0)  # 獲取影片時長（秒）
             token_per_second = 0.0167  # 每秒0.00167個令牌
             estimated_tokens =  round(duration * token_per_second, 2)
+            session['estimated_tokens'] = estimated_tokens
             print("estimated_tokens:", estimated_tokens)
             logging.info(f"Video info retrieved: Duration: {duration} seconds, Estimated tokens: {estimated_tokens}")
 
@@ -184,6 +185,7 @@ def upload_file():
     file.save(file_path)
     audio_length = len(AudioSegment.from_file(file_path)) / 1000.0
     estimated_cost = round(audio_length * 0.0167, 2)
+    session['estimated_cost'] = estimated_cost
     print("audio_length:", audio_length)
     print("estimated_cost:", estimated_cost)
     print("filename:", filename)
@@ -201,18 +203,23 @@ def upload_file():
 # 扣除點數
 def deduct_user_points(user_id, points_to_deduct):
     try:
-        user = users_db.find_one({"google_id": user_id})
-        user_points = user.get('points', 0)
-        points_to_deduct = float(points_to_deduct)
+        user_points = session['points']
 
         if user_points >= points_to_deduct:
-            user_points-= points_to_deduct
-            users_db.update_one({"google_id": user_id}, {"$set": {"points": user_points}})
-            logging.info(f"User {user_id} deducted {points_to_deduct} points. Remaining points: {user_points}")
-            return True, "點數扣除成功"
+            new_points = user_points - points_to_deduct
+            result = users_db.update_one({"google_id": user_id}, {"$set": {"points": new_points}})
+            if result.modified_count == 1:
+                session['points'] = new_points  # 確保只有在數據庫更新成功時才更新會話
+                logging.info(f"User {user_id} deducted {points_to_deduct} points. Remaining points: {new_points}")
+                return True, "點數扣除成功"
+            else:
+                raise Exception("Database update failed")
         else:
             logging.error(f"User {user_id} has insufficient points.")
             return False, "點數不足"
+    except ValueError:
+        logging.error("Invalid input for points to deduct")
+        return False, "無效的點數輸入"
     except Exception as e:
         logging.error(f"Error deducting points: {str(e)}")
         return False, "數據庫錯誤"
@@ -396,7 +403,7 @@ def summarize_text(text):
 def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
-    estimated_tokens = data.get('estimatedTokens', 0)
+    estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
 
     # 針對該用戶檢查URL是否已經處理過
@@ -475,7 +482,7 @@ def process_video():
 def process_audio():
     data = request.json
     filename = data.get('fileName')
-    estimated_cost = data.get('estimatedCost', 0)
+    estimated_cost = session.get('estimated_cost', 0)
 
     # 語音轉文字
     segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
