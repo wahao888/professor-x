@@ -164,11 +164,22 @@
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
-            cursor: pointer;
             margin-right: 10px;
         }
-        button:hover {
+        .button-grey {
+          background-color: #808080; /* 莫蘭迪藍 */
+          color: #ffffff;
+          cursor: not-allowed; /* 當滑鼠懸停時顯示禁止符號 */
+        }
+        .input-container button:hover {
             background-color: #666666;
+        }
+        .button-green {
+          background-color: #4CAF50; /* 莫蘭迪綠色 */
+          color: white;
+        }
+        .button-green:hover {
+          background-color: #388E3C; /* 滑鼠懸停時的深綠色 */
         }
         #transcriptionList {
             width: 23%;
@@ -197,18 +208,7 @@
       .tag:hover {
           background-color: #d0d0d0; /* 鼠標懸停時的背景色 */
       }
-      .button-green {
-        background-color: #4CAF50; /* 莫蘭迪綠色 */
-        color: white;
-      }
-      .button-green:hover {
-        background-color: #388E3C; /* 滑鼠懸停時的深綠色 */
-    }
-      .button-grey {
-          background-color: #808080; /* 莫蘭迪藍 */
-          color: #ffffff;
-          cursor: not-allowed; /* 當滑鼠懸停時顯示禁止符號 */
-      }
+
       #videoInfo, #fileInfo{
         display: flex; /* 使用flex來排列預估時間和token消耗 */
         align-items: center; /* 中心對齊 */
