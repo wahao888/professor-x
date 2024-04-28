@@ -362,6 +362,7 @@
       });
       
 
+
     // 從後端獲取影片資訊（時長和預估Token）
     function fetchVideoInfo() {
       const button = document.getElementById('estimateButton');
@@ -456,12 +457,13 @@
         progressBar.style.display = "block"; // 顯示進度條
 
         const url = document.getElementById("youtubeUrl").value;
+        const estimatedTokens = document.getElementById("estimatedTokens").textContent.split(": ")[1];  // 獲取 estimatedTokens
         fetch("/process_video", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url }),
+          body: JSON.stringify({ youtubeUrl: url, estimatedTokens: estimatedTokens }),
         })
           .then((response) => response.json())
           .then((data) => {
@@ -571,12 +573,13 @@
       progressBar.style.display = "block"; // 顯示進度條
   
       const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
+      const estimatedCost = document.getElementById("estimatedCost").textContent.split(": ")[1]; // 從界面獲取預估消耗
       fetch('/process_audio', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileName: fileName }), // 向後端發送檔案名稱
+          body: JSON.stringify({ fileName: fileName, estimatedCost: estimatedCost }), // 向後端發送檔案名稱
       })
       .then(response => response.json())
       .then(data => {

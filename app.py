@@ -141,6 +141,8 @@ def index():
 
 
 
+
+
 # 從youtube獲取音訊資訊
 @app.route('/get_video_info', methods=['POST'])
 def get_video_info():
@@ -158,6 +160,13 @@ def get_video_info():
             estimated_tokens =  round(duration * token_per_second, 2)
             print("estimated_tokens:", estimated_tokens)
             logging.info(f"Video info retrieved: Duration: {duration} seconds, Estimated tokens: {estimated_tokens}")
+
+        #檢查用戶點數是否足夠
+        user_points = session.get('user_points', 0)
+        if user_points < estimated_tokens:
+            logging.error(f"User: {session.get('name')} has insufficient points.")
+            return jsonify({"success": False, "message": "點數不足，請儲值"}), 400
+
         return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens, "videoTitle": video_title})
     except Exception as e:
         print("錯誤訊息:", str(e))
@@ -178,8 +187,35 @@ def upload_file():
     print("audio_length:", audio_length)
     print("estimated_cost:", estimated_cost)
     print("filename:", filename)
+
+    #檢查用戶點數是否足夠
+    user_points = session.get('user_points', 0)
+    if user_points < estimated_cost:
+        logging.error(f"User: {session.get('name')} has insufficient points.")
+        return jsonify({"success": False, "message": "點數不足，請儲值"}), 400
+
     logging.info(f"File uploaded: {filename}, Length: {audio_length} seconds, Estimated cost: {estimated_cost} tokens")
     return jsonify(success=True, fileName=filename, audioLength=audio_length, estimatedCost=estimated_cost)
+
+
+# 扣除點數
+def deduct_user_points(user_id, points_to_deduct):
+    try:
+        user = users_db.find_one({"google_id": user_id})
+        user_points = user.get('points', 0)
+
+        if user_points >= points_to_deduct:
+            user_points-= points_to_deduct
+            users_db.update_one({"google_id": user_id}, {"$set": {"points": user_points}})
+            logging.info(f"User {user_id} deducted {points_to_deduct} points. Remaining points: {user_points}")
+            return True, "點數扣除成功"
+        else:
+            logging.error(f"User {user_id} has insufficient points.")
+            return False, "點數不足"
+    except Exception as e:
+        logging.error(f"Error deducting points: {str(e)}")
+        return False, "數據庫錯誤"
+    
 
 
 # def upload_to_gcs(local_file_path, gcs_bucket_name, gcs_file_path):
@@ -359,6 +395,7 @@ def summarize_text(text):
 def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
+    estimated_tokens = data.get('estimatedTokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
 
     # 針對該用戶檢查URL是否已經處理過
@@ -413,6 +450,13 @@ def process_video():
         content_db.insert_one(content_data)
         print("Content saved successfully.")
         logging.info("Content saved successfully.")
+
+        # 數據保存成功後扣除點數
+        success, message = deduct_user_points(google_id, estimated_tokens)
+        if not success:
+            logging.error("Failed to deduct points after saving content.")
+            raise Exception(message) 
+        
     except Exception as e:
         print({"success": False, "message": str(e)})
         logging.error(f"Error saving content: {str(e)}")
@@ -430,6 +474,7 @@ def process_video():
 def process_audio():
     data = request.json
     filename = data.get('fileName')
+    estimated_cost = data.get('estimatedCost', 0)
 
     # 語音轉文字
     segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
@@ -461,6 +506,13 @@ def process_audio():
         content_db.insert_one(content_data)
         print("Content saved successfully.")
         logging.info("Content saved successfully.")
+
+        # 數據保存成功後扣除點數
+        success, message = deduct_user_points(google_id, estimated_cost)
+        if not success:
+            logging.error("Failed to deduct points after saving content.")
+            raise Exception(message)  # Optionally handle this situation
+        
     except Exception as e:
         print({"success": False, "message": str(e)})
         logging.error(f"Error saving content: {str(e)}")
