@@ -155,6 +155,7 @@ def get_video_info():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
             video_title = info.get('title', 'DownloadedAudio')
+            session['file_name'] = video_title
             duration = info.get('duration', 0)  # 獲取影片時長（秒）
             token_per_second = 0.0167  # 每秒0.00167個令牌
             estimated_tokens =  round(duration * token_per_second, 2)
@@ -442,7 +443,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0].split("/")[-1][:-4]  # 從路徑中提取檔案名稱
+    file_name = session.get('file_name')  # 從會話中獲取檔案名稱
 
     content_data = {
         "google_id": google_id,
