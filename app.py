@@ -203,8 +203,8 @@ def upload_file():
 # 扣除點數
 def deduct_user_points(user_id, points_to_deduct):
     try:
-        user_points = session['points']
-
+        user_points = float(session.get('user_points', 0))
+        points_to_deduct = float(points_to_deduct)
         if user_points >= points_to_deduct:
             new_points = user_points - points_to_deduct
             result = users_db.update_one({"google_id": user_id}, {"$set": {"points": new_points}})
