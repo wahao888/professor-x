@@ -204,7 +204,7 @@ def deduct_user_points(user_id, points_to_deduct):
         user = users_db.find_one({"google_id": user_id})
         user_points = user.get('points', 0)
         points_to_deduct = float(points_to_deduct)
-        
+
         if user_points >= points_to_deduct:
             user_points-= points_to_deduct
             users_db.update_one({"google_id": user_id}, {"$set": {"points": user_points}})
@@ -435,7 +435,7 @@ def process_video():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0].split("/")[-1][:10]  # 從路徑中提取檔案名稱
+    file_name = segment_files[0].split("/")[-1][:-3]  # 從路徑中提取檔案名稱
 
     content_data = {
         "google_id": google_id,
