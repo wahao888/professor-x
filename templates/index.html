@@ -159,28 +159,27 @@
         
         .input-container button {
           flex-grow: 1; /* 佔據較少空間 */
-            background-color: #808080; /* 莫蘭迪藍 */
-            color: #ffffff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            margin-right: 10px;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          margin-right: 10px;
         }
         .button-grey {
           background-color: #808080; /* 莫蘭迪藍 */
           color: #ffffff;
           cursor: not-allowed; /* 當滑鼠懸停時顯示禁止符號 */
         }
-        .input-container button:hover {
-            background-color: #666666;
-        }
         .button-green {
           background-color: #4CAF50; /* 莫蘭迪綠色 */
           color: white;
         }
+        .input-container button:hover {
+            background-color: #666666;
+        }
         .button-green:hover {
           background-color: #388E3C; /* 滑鼠懸停時的深綠色 */
         }
+
         #transcriptionList {
             width: 23%;
             float: left;
@@ -330,39 +329,36 @@
     
     
     <script>
-      // flash跳出訊息
       document.addEventListener("DOMContentLoaded", function () {
+        var youtubeUrlInput = document.getElementById("youtubeUrl");
+        var estimateButton = document.getElementById("estimateButton");
+      
+        // 顯示或隱藏閃現訊息
         var flashMessageContainer = document.getElementById('flash-message');
-        // 檢查是否有 flash 訊息需要顯示
-        if (flashMessageContainer.innerText.trim() !== "") {
-          flashMessageContainer.style.display = 'block'; // 使訊息可見
-          // 設定計時器，在 5 秒後隱藏訊息
+        if (flashMessageContainer && flashMessageContainer.innerText.trim() !== "") {
+          flashMessageContainer.style.display = 'block';
           window.setTimeout(function() {
             flashMessageContainer.style.display = 'none';
           }, 5000);
         }
+      
+        // 綁定 URL 輸入欄位的輸入事件
+        youtubeUrlInput.addEventListener("input", function() {
+          if (isValidYouTubeUrl(youtubeUrlInput.value)) {
+            estimateButton.disabled = false;
+            estimateButton.classList.replace("button-grey", "button-green");
+          } else {
+            estimateButton.disabled = true;
+            estimateButton.classList.replace("button-green", "button-grey");
+          }
+        });
+      
+        function isValidYouTubeUrl(url) {
+          var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
+          return pattern.test(url);
+        }
       });
       
-
-      // 驗證YouTube URL
-      document.addEventListener("DOMContentLoaded", function () {
-        var youtubeUrlInput = document.getElementById("youtubeUrl");
-        var estimateButton = document.getElementById("estimateButton");
-    
-        youtubeUrlInput.addEventListener("input", function() {
-            if (isValidYouTubeUrl(youtubeUrlInput.value)) {
-                estimateButton.disabled = false; // 啟用預估時間按鈕
-                document.getElementById("estimateButton").classList.replace("button-grey", "button-green");
-            } else {
-                estimateButton.disabled = true;  // 禁用預估時間按鈕
-                document.getElementById("estimateButton").classList.replace("button-green", "button-grey");
-            }
-        });
-    });
-    function isValidYouTubeUrl(url) {
-        var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
-        return pattern.test(url);
-    }
 
     // 從後端獲取影片資訊（時長和預估Token）
     function fetchVideoInfo() {
