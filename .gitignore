@@ -6,3 +6,5 @@ __pycache__/
 *.pyc
 app.yaml
 myapp.log
+professor-x_service.txt
+ngnix_sites-available.txt
