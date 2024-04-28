@@ -209,7 +209,7 @@ def deduct_user_points(user_id, points_to_deduct):
             new_points = user_points - points_to_deduct
             result = users_db.update_one({"google_id": user_id}, {"$set": {"points": new_points}})
             if result.modified_count == 1:
-                session['points'] = new_points  # 確保只有在數據庫更新成功時才更新會話
+                session['user_points'] = new_points  # 確保只有在數據庫更新成功時才更新會話
                 logging.info(f"User {user_id} deducted {points_to_deduct} points. Remaining points: {new_points}")
                 return True, "點數扣除成功"
             else:
