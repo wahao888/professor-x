@@ -410,8 +410,9 @@ def summarize_text(text):
 @app.route('/process_video', methods=['POST'])
 def process_video():
     data = request.json
+    logging.info(f"Data received: {data}")
     youtube_url = data['youtubeUrl']
-    add_timestamp = data.get('YT_addTimestamp')
+    add_timestamp = data['YT_addTimestamp']
     logging.info(f"add_timestamp: {add_timestamp}")
     estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
