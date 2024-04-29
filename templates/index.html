@@ -69,6 +69,7 @@
             display: flex;
             justify-content: space-between;
             min-height: 100vh;
+
         }
         .list-container, .transcription-container {
           margin-top: 10px; 
@@ -94,7 +95,7 @@
             display: flex;
             flex-direction: column; /* 使子元素垂直排列 */
             justify-content: space-between;
-            min-width: 200px; /* 設定最小寬度 */
+            min-width: 500px; /* 設定最小寬度 */
             padding: 20px;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
@@ -141,18 +142,13 @@
             border-radius: 10px; /* 圓角 */
             margin-bottom: 20px;
         }
-        .url-input-container { /* 新增的類別為了 flex 排版 */
+        .url-input-container, .upload-input-container {
           display: flex;
-          align-items: center; /* 垂直居中對齊 */
-          margin-bottom: 10px; /* 和預估信息之間的間距 */
+          align-items: center;
+          width: 100%;
         }
-        .upload-input-container { /* 新增的類別為了 flex 排版 */
-          display: flex;
-          align-items: center; /* 垂直居中對齊 */
-          margin-bottom: 10px; /* 和預估信息之間的間距 */
-        }
+        
         .input-container input {
-            flex-grow: 19; /* 讓輸入框佔據大部分空間 */
             margin-right: 20px;
         }
         .info {
@@ -160,11 +156,11 @@
         }
         
         .input-container button {
-          flex-grow: 1; /* 佔據較少空間 */
           border: none;
           padding: 10px 20px;
           border-radius: 5px;
           margin-right: 10px;
+          min-width: 80px; /* 最小寬度 */
         }
         .button-grey {
           background-color: #808080; /* 莫蘭迪藍 */
@@ -181,6 +177,51 @@
         .button-green:hover {
           background-color: #388E3C; /* 滑鼠懸停時的深綠色 */
         }
+
+        
+        /* 隱藏原生的選擇檔案 */
+        #audioFileInput {
+          display: none;
+        }
+        /* 新增選擇檔案按鈕 */
+        #choosefile-button {
+          display: inline-block;
+          border: none;
+          font-size: 14px; /* 字體大小 */
+          padding: 10px 20px;
+          background-color: #4CAF50;
+          color: white;
+          border-radius: 5px;
+          cursor: pointer;
+          text-align: center;
+          margin-right: 10px;
+      }
+      #choosefile-button:hover {
+          background-color: #45a049; /* 懸停時的背景顏色 */
+      }
+      /* 顯示檔案名稱的容器 */
+      #fileNameDisplay,#youtubeUrl {
+        flex-grow: 1; /* 讓輸入框佔據大部分空間 */
+        display: inline-block;
+        min-width: 100px; /* 最小寬度 */
+        border: none;
+        font-size: 14px; /* 字體大小 */
+        padding: 10px 20px; /* 內邊距 */
+        border-radius: 5px; /* 圓角邊框 */
+        background-color: #f2f2f2; /* 背景顏色 */
+        overflow: hidden; /* 隱藏超出部分 */
+        white-space: nowrap; /* 避免文字換行 */
+        text-overflow: ellipsis; /* 用省略號顯示隱藏的文字 */
+        text-align: left;
+        margin-right: 10px;
+      }
+      #choosefile-button,
+      #uploadButton,
+      #transcribeButton,
+      #fileNameDisplay {
+        vertical-align: bottom;
+      }
+
 
         #transcriptionList {
             width: 23%;
@@ -219,6 +260,7 @@
     #videoInfo span, #fileInfo span {
       padding-right: 20px; /* 右側內邊距 */
     }
+
 
     @media (max-width: 600px) {
       .header-container, .main-container, .list-container, .transcription-container, .input-container, .content-container {
@@ -300,8 +342,10 @@
           <div class="input-container">
             <h1>上傳音訊</h1>
             <div class="upload-input-container">
-              <form id="fileUploadForm" method="post" enctype="multipart/form-data">
-                <input type="file" name="audioFile" id="audioFileInput" accept=".mp3">
+              <form id="fileUploadForm" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; width: 100%;">
+                <label for="audioFileInput" id="choosefile-button">選擇檔案</label><!-- 自定義的上傳按鈕 -->
+                <div id="fileNameDisplay" class="fileNameDisplay">尚未選擇檔案</div>
+                <input type="file" name="audioFile" id="audioFileInput" accept=".mp3"><!-- 原生的選擇檔案 -->
                 <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" >上傳檔案</button>
                 <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled>音訊轉文字</button>
               </form>
@@ -415,6 +459,15 @@
       });
   });
   
+
+
+    // 顯示檔案的名稱
+    document.getElementById('audioFileInput').addEventListener('change', function() {
+      // 獲取檔案名稱，如果選擇了檔案
+      var fileName = this.files && this.files.length > 0 ? this.files[0].name : '尚未選擇檔案';
+      // 更新顯示檔名的元素
+      document.getElementById('fileNameDisplay').textContent = fileName;
+  });
 
 
     // 上傳檔案取得音訊長度和預估消耗
