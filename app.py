@@ -388,7 +388,7 @@ def transcribe_audio(segment_files, add_timestamp):
             index, transcription_result = future.result()
             transcriptions[index] = transcription_result  # 按索引放置轉寫結果
     print("transcribe_audio: All segments transcribed.")
-    logging.info(f"All segments transcribed. {transcriptions}")
+    logging.info(f"All segments transcribed.")
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
@@ -440,7 +440,7 @@ def process_video():
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
     print("segment_files:", segment_files)
-    transcription = transcribe_audio(segment_files, add_timestamp).replace(" ", "\n")
+    transcription = transcribe_audio(segment_files, add_timestamp)
     summary = summarize_text(transcription)
 
     # 處理重點整理換行

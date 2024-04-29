@@ -458,6 +458,14 @@
           var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
           return pattern.test(url);
         }
+
+        const checkboxElement = document.getElementById("YT_addTimestamp");
+        if (checkboxElement) {
+            console.log("Checkbox value: ", checkboxElement.checked);
+        } else {
+            console.log("Checkbox element not found");
+        }
+
       });
       
 
