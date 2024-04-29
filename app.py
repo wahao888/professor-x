@@ -353,7 +353,7 @@ def segment_audio(filename, segment_length_minutes):
 
 def transcribe_segment(filename, index, add_timestamp):
     """處理單個音訊文件的轉寫，返回包括索引的結果"""
-    response_format="srt" if add_timestamp else "text",
+    response_format="srt" if add_timestamp else "text"
 
     try:
         with open(filename, "rb") as audio_file:
@@ -364,12 +364,9 @@ def transcribe_segment(filename, index, add_timestamp):
             )
             print(f"transcribe_segment {index}: Transcription successful.")
             logging.info(f"Transcription of segment {index} successful.")
-            logging.info(f"Transcription: {transcription}")
+            logging.info(f"Add_timestamp: {add_timestamp}, Transcription: {transcription}")
 
-            if add_timestamp:
-                return index, transcription
-            else:
-                return index, transcription.text
+            return index, transcription
             
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")

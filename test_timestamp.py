@@ -48,4 +48,4 @@ def transcribe_audio(segment_files, add_timestamp):
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
-print(transcribe_segment("test.mp3", 1, False))
+print(transcribe_segment("test.mp3", 1, True))
