@@ -1,6 +1,8 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 
 load_dotenv() 
@@ -25,16 +27,25 @@ def transcribe_segment(filename, index, add_timestamp):
                 response_format=response_format
             )
             print(f"transcribe_segment {index}: Transcription successful.")
-            # 根據 add_timestamp 的值決定返回的內容
-            if response_format == "srt":
-                return index, transcription
-            else:
-                return index, transcription
+
+            return index, transcription
             
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
     except Exception as e:
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
     return index, ""
+
+def transcribe_audio(segment_files, add_timestamp):
+    """並行處理所有音訊分段的轉寫，確保按原始順序組合結果"""
+    transcriptions = [None] * len(segment_files)  # 初始化結果列表，大小與分段數相同
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(transcribe_segment, filename, i, add_timestamp) for i, filename in enumerate(segment_files)]
+        for future in as_completed(futures):
+            index, transcription_result = future.result()
+            transcriptions[index] = transcription_result  # 按索引放置轉寫結果
+    print("transcribe_audio: All segments transcribed.")
+    return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
+
 
 print(transcribe_segment("test.mp3", 1, False))
