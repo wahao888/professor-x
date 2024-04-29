@@ -135,8 +135,7 @@
             display: flex;
             flex-direction: column; /* 指定子元素垂直排列 */
             justify-content: space-between;
-            padding-left: 20px;
-            padding-bottom: 20px;
+            padding: 0 20px 20px;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
@@ -221,6 +220,46 @@
       #fileNameDisplay {
         vertical-align: bottom;
       }
+
+      /* 添加時間戳，隱藏原始的 checkbox */
+      #YT_addTimestamp, #Audio_addTimestamp {
+        display: none;
+      }
+      /* 創建一個新的 label 样式 */
+      .label-btn {
+        display: inline-block;
+        padding: 5px 15px;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        background-color: #f8f8f8;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      /* 當 checkbox 被選中時改變 label 的样式 */
+      #YT_addTimestamp:checked + .label-btn {
+        background-color: #388E3C;
+        border-color: #aaa;
+        color: white;
+        box-shadow: 0px 2px 0px #aaa;
+        transform: translateY(2px);
+      }
+      #Audio_addTimestamp:checked + .label-btn {
+        background-color: #388E3C;
+        border-color: #aaa;
+        color: white;
+        box-shadow: 0px 2px 0px #aaa;
+        transform: translateY(2px);
+      }
+
+
+      .checkbox-container {
+        display: flex;
+        padding: 20px;
+        background-color: #ffffff; /* 純白背景 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
+        border-radius: 10px; /* 圓角 */
+        margin-bottom: 20px;
+        }
 
 
         #transcriptionList {
@@ -336,6 +375,8 @@
               <span id="duration">影片時間: 未知</span>
               <span id="estimatedTokens">預計消耗: 未知</span>
               <span id="videotitle">影片標題: 未知</span>
+              <input type="checkbox" id="YT_addTimestamp" name="YT_addTimestamp" value="true">
+              <label for="YT_addTimestamp" class="label-btn">添加時間戳</label>
             </div>
           </div>
             
@@ -354,8 +395,22 @@
               <span id="audioLength">音訊長度: 未知</span>
               <span id="estimatedCost">預計消耗: 未知</span>
               <span id="fileName">檔案名稱: 未知</span>
+              <input type="checkbox" id="Audio_addTimestamp" name="Audio_addTimestamp" value="true">
+              <label for="Audio_addTimestamp" class="label-btn">添加時間戳</label>
             </div>
           </div>
+
+          <div class="checkbox-container">
+            <div style="margin-right: 10px;">
+            <input type="checkbox" id="translate" name="translate" value="true">
+            <label for="translate">翻譯</label>
+            </div>
+            <div style="margin-right: 10px;">
+            <input type="checkbox" id="summarize" name="summarize" value="true">
+            <label for="summarize">重點節錄</label>
+            </div>
+          </div>
+
           <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
         </div>
 
@@ -415,12 +470,13 @@
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
       const url = document.getElementById("youtubeUrl").value;
+      const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
       fetch("/get_video_info", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url }),
+          body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp}),
       })
       .then((response) => response.json())
       .then((data) => {
@@ -478,9 +534,10 @@
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
       var formData = new FormData(document.getElementById('fileUploadForm'));
+      const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
       fetch('/upload_file', {
           method: 'POST',
-          body: formData,
+          body: JSON.stringify({ formData: formData, Audio_addTimestamp: Audio_addTimestamp}),
       })
       .then(response => response.json())
       .then(data => {

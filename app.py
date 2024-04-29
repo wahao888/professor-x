@@ -351,13 +351,19 @@ def segment_audio(filename, segment_length_minutes):
     
 #     return " ".join(transcriptions)  # 將所有片段的轉寫結果合併
 
-def transcribe_segment(filename, index):
+def transcribe_segment(filename, index, add_timestamp=False):
     """處理單個音訊文件的轉寫，返回包括索引的結果"""
+    if add_timestamp:
+        timestamp_options = {"timestamp_granularities": ["word"]}
+    else:
+        timestamp_options = {}
+
     try:
         with open(filename, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file,
+                **timestamp_options # 將時間戳選項傳遞給轉錄請求
             )
             print(f"transcribe_segment {index}: Transcription successful.")
             logging.info(f"Transcription of segment {index} successful.")
@@ -372,11 +378,11 @@ def transcribe_segment(filename, index):
         os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
     return index, ""
 
-def transcribe_audio(segment_files):
+def transcribe_audio(segment_files, add_timestamp=False):
     """並行處理所有音訊分段的轉寫，確保按原始順序組合結果"""
     transcriptions = [None] * len(segment_files)  # 初始化結果列表，大小與分段數相同
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(transcribe_segment, filename, i) for i, filename in enumerate(segment_files)]
+        futures = [executor.submit(transcribe_segment, filename, i, add_timestamp) for i, filename in enumerate(segment_files)]
         for future in as_completed(futures):
             index, transcription_result = future.result()
             transcriptions[index] = transcription_result  # 按索引放置轉寫結果
@@ -404,6 +410,7 @@ def summarize_text(text):
 def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
+    add_timestamp = data.get('YT_addTimestamp', False)
     estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
 
@@ -432,7 +439,7 @@ def process_video():
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
     print("segment_files:", segment_files)
-    transcription = transcribe_audio(segment_files).replace(" ", "\n")
+    transcription = transcribe_audio(segment_files, add_timestamp).replace(" ", "\n")
     summary = summarize_text(transcription)
 
     # 處理重點整理換行
@@ -484,12 +491,13 @@ def process_video():
 def process_audio():
     data = request.json
     filename = data.get('fileName')
+    add_timestamp = data.get('Audio_addTimestamp', False)
     estimated_cost = session.get('estimated_cost', 0)
 
     # 語音轉文字
     segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
     print("segment_files:", segment_files)
-    transcription = transcribe_audio(segment_files).replace(" ", "\n")
+    transcription = transcribe_audio(segment_files, add_timestamp).replace(" ", "\n")
     summary = summarize_text(transcription)
 
     # 處理重點整理換行
