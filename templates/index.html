@@ -536,7 +536,7 @@
       var formData = new FormData(document.getElementById('fileUploadForm'));
       fetch('/upload_file', {
           method: 'POST',
-          body: JSON.stringify({ formData: formData }),
+          body: formData,
       })
       .then(response => response.json())
       .then(data => {
