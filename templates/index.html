@@ -294,7 +294,9 @@
         display: flex; /* 使用flex來排列預估時間和token消耗 */
         align-items: center; /* 中心對齊 */
         margin-top: 10px; /* 與輸入框之間的間距 */
-        
+        overflow: hidden; /* 避免長標籤溢出 */
+        word-wrap: break-word; /* 長單詞自動換行 */
+        word-break: break-all; /* 斷開單詞，以確保內容不會溢出容器 */
     }
     #videoInfo span, #fileInfo span {
       padding-right: 20px; /* 右側內邊距 */
