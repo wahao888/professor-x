@@ -459,26 +459,11 @@
           return pattern.test(url);
         }
 
-        const checkboxElement = document.getElementById("YT_addTimestamp");
-        if (checkboxElement) {
-            console.log("Checkbox value: ", checkboxElement.checked);
-        } else {
-            console.log("Checkbox element not found");
-        }
       });
       
 
-      document.getElementById('YT_addTimestamp').addEventListener('change', function() {
-      const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
 
-        if (this.checked) {
-            console.log('Checkbox is checked',YT_addTimestamp); // Checkbox 被勾選
-        } else {
-            console.log('Checkbox is not checked'); // Checkbox 沒被勾選
-        }
-    });
-
-    // 從後端獲取影片資訊（時長和預估Token）
+    // YT預估消耗
     function fetchVideoInfo() {
       const button = document.getElementById('estimateButton');
       button.textContent = "處理中..."; // 更改按鈕文字
@@ -514,6 +499,9 @@
       });
     }
 
+
+
+
     // 檢查是否選擇了音訊文件
     document.addEventListener("DOMContentLoaded", function() {
       var fileInput = document.getElementById('audioFileInput');
@@ -529,8 +517,6 @@
           }
       });
   });
-  
-
 
     // 顯示檔案的名稱
     document.getElementById('audioFileInput').addEventListener('change', function() {
@@ -540,8 +526,7 @@
       document.getElementById('fileNameDisplay').textContent = fileName;
   });
 
-
-    // 上傳檔案取得音訊長度和預估消耗
+    // 用戶上傳檔案，預估消耗
     function uploadFile() {
       const button = document.getElementById('uploadButton');
       button.textContent = "處理中..."; // 更改按鈕文字
@@ -621,7 +606,6 @@
             localStorage.setItem("transcription", data.transcription);
             localStorage.setItem("summary", data.summary);
 
-
           } else {
             alert(data.message);
           }
@@ -638,55 +622,6 @@
             button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
         });
       }
-
-      
-      // 頁面加載
-      document.addEventListener("DOMContentLoaded", function () {
-
-        // 從後端獲取用戶標籤
-        fetchUserContents();
-
-        // 從localStorage讀取數據
-        const storedTranscription = localStorage.getItem("transcription");
-        const storedSummary = localStorage.getItem("summary");
-
-        if (storedTranscription) {
-          document.getElementById("transcription").textContent =
-            storedTranscription;
-        }
-        if (storedSummary) {
-          document.getElementById("summary").textContent = storedSummary;
-        }
-      });
-
-      // 從後端獲取用戶標籤
-      function fetchUserContents() {
-        fetch('/get_user_contents', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const tagsContainer = document.getElementById("tagsContainer");
-                data.contents.forEach(content => {
-                    const newTag = document.createElement("div");
-                    newTag.textContent = content.file_name;
-                    newTag.setAttribute("url", content.url);
-                    newTag.className = "tag";
-                    newTag.onclick = function() {
-                        displayVideoContent(this.getAttribute("url"));
-                    };
-                    tagsContainer.appendChild(newTag);
-                });
-            } else {
-                console.error(data.message);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
 
 
     // 用戶上傳mp3獲取音訊內容
@@ -751,6 +686,59 @@
       });
   }
   
+
+
+
+
+      
+      // 頁面加載
+      document.addEventListener("DOMContentLoaded", function () {
+
+        // 從後端獲取用戶標籤
+        fetchUserContents();
+
+        // 從localStorage讀取數據
+        const storedTranscription = localStorage.getItem("transcription");
+        const storedSummary = localStorage.getItem("summary");
+
+        if (storedTranscription) {
+          document.getElementById("transcription").textContent =
+            storedTranscription;
+        }
+        if (storedSummary) {
+          document.getElementById("summary").textContent = storedSummary;
+        }
+      });
+
+      // 從後端獲取用戶標籤
+      function fetchUserContents() {
+        fetch('/get_user_contents', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tagsContainer = document.getElementById("tagsContainer");
+                data.contents.forEach(content => {
+                    const newTag = document.createElement("div");
+                    newTag.textContent = content.file_name;
+                    newTag.setAttribute("url", content.url);
+                    newTag.className = "tag";
+                    newTag.onclick = function() {
+                        displayVideoContent(this.getAttribute("url"));
+                    };
+                    tagsContainer.appendChild(newTag);
+                });
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
 
 
       // 點擊標籤顯示相應的影片內容
