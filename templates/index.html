@@ -465,10 +465,18 @@
         } else {
             console.log("Checkbox element not found");
         }
-
       });
       
 
+      document.getElementById('YT_addTimestamp').addEventListener('change', function() {
+      const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
+
+        if (this.checked) {
+            console.log('Checkbox is checked',YT_addTimestamp); // Checkbox 被勾選
+        } else {
+            console.log('Checkbox is not checked'); // Checkbox 沒被勾選
+        }
+    });
 
     // 從後端獲取影片資訊（時長和預估Token）
     function fetchVideoInfo() {

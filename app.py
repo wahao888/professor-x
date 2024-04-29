@@ -412,6 +412,7 @@ def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
     add_timestamp = data.get('YT_addTimestamp')
+    logging.info(f"add_timestamp: {add_timestamp}")
     estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
 
