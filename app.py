@@ -363,6 +363,7 @@ def transcribe_segment(filename, index, add_timestamp=False):
             transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file,
+                response_format="verbose_json",
                 **timestamp_options # 將時間戳選項傳遞給轉錄請求
             )
             print(f"transcribe_segment {index}: Transcription successful.")
