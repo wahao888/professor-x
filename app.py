@@ -387,7 +387,7 @@ def transcribe_audio(segment_files, add_timestamp):
             index, transcription_result = future.result()
             transcriptions[index] = transcription_result  # 按索引放置轉寫結果
     print("transcribe_audio: All segments transcribed.")
-    logging.info("All segments transcribed.")
+    logging.info(f"All segments transcribed. {transcriptions}")
     return " ".join(filter(None, transcriptions))  # 組合所有轉寫結果，並過濾掉任何 None 值
 
 
