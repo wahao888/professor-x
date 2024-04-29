@@ -364,8 +364,12 @@ def transcribe_segment(filename, index, add_timestamp):
             )
             print(f"transcribe_segment {index}: Transcription successful.")
             logging.info(f"Transcription of segment {index} successful.")
+            logging.info(f"Transcription: {transcription}")
 
-            return index, transcription.text
+            if add_timestamp:
+                return index, transcription
+            else:
+                return index, transcription.text
             
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
