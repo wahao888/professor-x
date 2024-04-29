@@ -486,13 +486,12 @@
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
       const url = document.getElementById("youtubeUrl").value;
-      const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
       fetch("/get_video_info", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp}),
+          body: JSON.stringify({ youtubeUrl: url}),
       })
       .then((response) => response.json())
       .then((data) => {
@@ -550,10 +549,9 @@
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
       var formData = new FormData(document.getElementById('fileUploadForm'));
-      const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
       fetch('/upload_file', {
           method: 'POST',
-          body: JSON.stringify({ formData: formData, Audio_addTimestamp: Audio_addTimestamp}),
+          body: JSON.stringify({ formData: formData}),
       })
       .then(response => response.json())
       .then(data => {
@@ -583,12 +581,13 @@
         progressBar.style.display = "block"; // 顯示進度條
 
         const url = document.getElementById("youtubeUrl").value;
+        const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
         fetch("/process_video", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url }),
+          body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp }),
         })
           .then((response) => response.json())
           .then((data) => {
@@ -701,12 +700,13 @@
       progressBar.style.display = "block"; // 顯示進度條
   
       const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
+      const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
       fetch('/process_audio', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileName: fileName}), // 向後端發送檔案名稱
+          body: JSON.stringify({ fileName: fileName, Audio_addTimestamp: Audio_addTimestamp}), // 向後端發送檔案名稱
       })
       .then(response => response.json())
       .then(data => {
