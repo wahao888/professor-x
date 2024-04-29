@@ -179,6 +179,7 @@ def get_video_info():
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     file = request.files['audioFile']
+    logging.info(f"File received: {file}")
     filename = secure_filename(file.filename)
     download_dir = "./download"
     file_path = os.path.join(download_dir, filename)
