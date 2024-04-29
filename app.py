@@ -351,28 +351,21 @@ def segment_audio(filename, segment_length_minutes):
     
 #     return " ".join(transcriptions)  # 將所有片段的轉寫結果合併
 
-def transcribe_segment(filename, index, add_timestamp=False):
+def transcribe_segment(filename, index, add_timestamp):
     """處理單個音訊文件的轉寫，返回包括索引的結果"""
-    timestamp_options = {"timestamp_granularities": ["word"]} if add_timestamp else {}
-
+    response_format="srt" if add_timestamp else "text",
 
     try:
         with open(filename, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file,
-                response_format="verbose_json",
-                **timestamp_options # 將時間戳選項傳遞給轉錄請求
+                response_format=response_format
             )
             print(f"transcribe_segment {index}: Transcription successful.")
             logging.info(f"Transcription of segment {index} successful.")
-            # 根據 add_timestamp 的值決定返回的內容
-            if add_timestamp:
-                # 如果需要時間戳，則返回轉錄細節
-                return index, transcription.words
-            else:
-                # 如果不需要時間戳，則返回純文本轉錄
-                return index, transcription.text
+
+            return index, transcription
             
     except FileNotFoundError:
         print(f"檔案 {filename} 不存在。")
@@ -381,10 +374,11 @@ def transcribe_segment(filename, index, add_timestamp=False):
         print(f"處理檔案 {filename} 時發生錯誤：{e}")
         logging.error(f"Error processing file {filename}: {e}")
     finally:
-        os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
+        if os.path.exists(filename):
+            os.remove(filename)  # 確保即使出現錯誤也刪除處理過的音訊檔案
     return index, ""
 
-def transcribe_audio(segment_files, add_timestamp=False):
+def transcribe_audio(segment_files, add_timestamp):
     """並行處理所有音訊分段的轉寫，確保按原始順序組合結果"""
     transcriptions = [None] * len(segment_files)  # 初始化結果列表，大小與分段數相同
     with ThreadPoolExecutor(max_workers=5) as executor:
@@ -416,7 +410,7 @@ def summarize_text(text):
 def process_video():
     data = request.json
     youtube_url = data['youtubeUrl']
-    add_timestamp = data.get('YT_addTimestamp', False)
+    add_timestamp = data.get('YT_addTimestamp')
     estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
 
@@ -497,7 +491,7 @@ def process_video():
 def process_audio():
     data = request.json
     filename = data.get('fileName')
-    add_timestamp = data.get('Audio_addTimestamp', False)
+    add_timestamp = data.get('Audio_addTimestamp')
     estimated_cost = session.get('estimated_cost', 0)
 
     # 語音轉文字
