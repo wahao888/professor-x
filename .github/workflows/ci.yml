@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  # 或者是您的默認分支
+      - main
 
 jobs:
   deploy:
