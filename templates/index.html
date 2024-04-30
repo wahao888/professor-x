@@ -6,6 +6,7 @@
     <title>Professor X</title>
 
     <style>
+
       .flash-container {
         position: fixed;
         left: 50%;  /* 設定左側距離視窗左側 50% */
@@ -67,9 +68,8 @@
         }
         .main-container {
             display: flex;
+            align-items: flex-start;
             justify-content: space-between;
-            min-height: 100vh;
-
         }
         .list-container, .transcription-container {
           margin-top: 10px; 
@@ -105,11 +105,11 @@
             display: flex;
             justify-content: space-between;
             min-width: 200px; /* 設定最小寬度 */
-            min-height: 77vh;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
             margin-bottom: 20px;
+            
         }
         .content-container > div {
             width: 48%;
@@ -125,7 +125,6 @@
             flex-direction: column; /* 使子元素垂直排列 */
             align-items: flex-start; /* 確保子元素在橫向上靠左對齊 */
             padding: 20px;
-            min-height: 95vh; /* 視口高度（viewport height）的百分比 */
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
@@ -367,7 +366,7 @@
       <div id="transcriptionContent" class="transcription-container">
         <div>
           <div class="input-container">
-            <h1>YouTube內容擷取工具</h1>
+            <h1>YouTube內容擷取</h1>
             <div class="url-input-container">
               <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
               <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預估消耗</button>
@@ -419,7 +418,7 @@
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
-            <div id="transcription" style="white-space:pre-wrap;">轉寫內容將顯示在這裡</div>
+            <div id="transcription" style="white-space:pre-wrap;">轉錄內容將顯示在這裡</div>
           </div>
           <div id="summary-section" style="margin-left: 2%">
             <h2>內容摘要</h2>
