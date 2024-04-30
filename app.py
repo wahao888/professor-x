@@ -208,7 +208,7 @@ def deduct_user_points(user_id, points_to_deduct):
         user_points = float(session.get('user_points', 0))
         points_to_deduct = float(points_to_deduct)
         if user_points >= points_to_deduct:
-            new_points = user_points - points_to_deduct
+            new_points = round(user_points - points_to_deduct, 2)
             result = users_db.update_one({"google_id": user_id}, {"$set": {"points": new_points}})
             if result.modified_count == 1:
                 session['user_points'] = new_points  # 確保只有在數據庫更新成功時才更新會話
