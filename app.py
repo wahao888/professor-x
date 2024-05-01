@@ -549,6 +549,8 @@ def process_audio():
 
 
 
+
+
 # 點擊標籤顯示內容
 @app.route('/get_video_content', methods=['POST'])
 def get_video_content():
@@ -581,6 +583,10 @@ def get_user_contents():
     return jsonify({"success": True, "contents": content_list})
 
 
+
+
+
+# ========== 付款相關 以下 ==========
 
 
 # 讓使用者根據分類檢索內容
@@ -619,9 +625,11 @@ def pay(amount):
         if payment_url:
             return redirect(payment_url)
         else:
+            session.pop('amount', None)
             logging.error("Unable to create payment")
             return 'Unable to create payment'
     except Exception as e:
+        session.pop('amount', None)
         logging.error(f"Error creating payment: {str(e)}")
         return str(e)
 
@@ -645,7 +653,6 @@ def payment_completed():
     logging.info(f"Payment completed: {success}, {payment_details}")
 
     if success:
-        # actual_paid_amount = payment_details['transactions'][0]['amount']['total']
         actual_paid_amount = session.get('amount')
         logging.info(f"Actual paid amount: {actual_paid_amount}")
         points = calculate_points_based_on_amount(actual_paid_amount)  # 計算應增加的點數
@@ -668,6 +675,8 @@ def payment_completed():
             logging.error("User not logged in.")
             flash('You need to log in to receive points.', 'error')
     else:
+        session.pop('amount', None)
+        logging.error("Payment failed.")
         flash('Payment failed. Please try again.', 'error')
     
     return redirect(url_for('index'))
@@ -679,28 +688,50 @@ def payment_cancelled():
     return redirect(url_for('index'))  # Redirect to the homepage
 
 
-
-def create_test_file():
-    # 確保路徑是正確的，這裡使用的是絕對路徑
-    # directory = '/home/ubuntu/professor-x/download'
-    directory = './download'
-    filename = 'test.txt'
-    filepath = os.path.join(directory, filename)
-
-    # 嘗試在指定目錄創建檔案
-    try:
-        with open(filepath, 'w') as file:
-            file.write('Hello, this is a test file.')
-        print(f"File created successfully at {filepath}")
-        logging.info(f"Test file created successfully at {filepath}")
-    except PermissionError as e:
-        print(f"Permission denied: {e}")
-        logging.error(f"Permission denied: {e}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        logging.error(f"An error occurred: {e}")
+# 訂閱制
+# 設置Webhook監聽器
+@app.route('/paypal/webhook', methods=['POST'])
+def paypal_webhook():
+    data = request.json
+    if data['event_type'] == 'BILLING.SUBSCRIPTION.ACTIVATED':
+        # 處理訂閱啟動事件
+        print("訂閱已啟動")
+    elif data['event_type'] == 'BILLING.SUBSCRIPTION.CANCELLED':
+        # 處理訂閱取消事件
+        print("訂閱已取消")
+    return jsonify(success=True)
 
 
+@app.route('/subscribe/<amount>', methods=['POST'])
+def subscribe(amount):
+
+    # 把amount存到session
+    session['amount'] = amount
+    logging.info(f"Subscribing to plan with amount: {amount}")
+
+    # 從前端表單獲取數據
+    start_time = request.form.get('start_time')
+    customer_email = request.form.get('email')
+    given_name = request.form.get('given_name')
+    surname = request.form.get('surname')
+    
+    # 產品和計劃
+    product_id = paypal_integration.create_product()
+    plan_id = paypal_integration.create_plan(product_id, amount)
+    
+    # 創建訂閱
+    subscription = paypal_integration.create_subscription(plan_id, start_time, customer_email, given_name, surname)
+    logging.info(f"Subscription created: {subscription}")
+    if subscription:
+        # 將用戶重定向到PayPal進行支付
+        return redirect(subscription.get('links')[1].get('href'))
+    else:
+        session.pop('amount', None)
+        return "訂閱創建失敗，請重試！", 400
+
+
+
+# ========== 付款相關 以上 ==========
 
 
 
