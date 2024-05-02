@@ -2,6 +2,9 @@
 import paypalrestsdk
 from flask import jsonify, request, redirect, url_for
 import logging
+import requests
+from requests.auth import HTTPBasicAuth
+import uuid
 
 # 設定日誌級別和格式
 logging.basicConfig(
@@ -19,6 +22,8 @@ def init_paypal(client_id, client_secret):
         "client_id": client_id,
         "client_secret": client_secret
     })
+
+
 
 # 創建支付並返回支付 URL
 def create_payment(app, amount, currency='USD'):
@@ -74,27 +79,59 @@ def execute_payment(payment_id, payer_id):
 
 
 # =====以下為訂閱相關功能=====
-    
-# 創建訂閱產品
-def create_product():
-    product = paypalrestsdk.Product({
-        "name": "Professor X 訂閱服務",
-        "description": "每月音訊轉譯服務訂閱",
-        "type": "SERVICE",
-        "category": "SOFTWARE"
-    })
-
-    if product.create():
-        print("Product Created Successfully")
-        return product.id
+# 獲取訪問令牌
+def get_access_token(client_id, client_secret):
+    url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"  # Use sandbox URL for testing
+    headers = {
+        "Accept": "application/json",
+        "Accept-Language": "en_US",
+    }
+    body = {
+        "grant_type": "client_credentials"
+    }
+    response = requests.post(url, headers=headers, data=body, auth=HTTPBasicAuth(client_id, client_secret))
+    if response.status_code == 200:
+        logging.info("Access Token Retrieved Successfully")
+        return response.json()['access_token']  # Returns the access token
     else:
-        print(product.error)
-        return None
+        logging.error("Error retrieving access token")
+        return None  # Handle errors appropriately
+
+
+# 創建訂閱產品
+def create_product(access_token):
+    url = "https://api-m.sandbox.paypal.com/v1/catalogs/products"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+        "PayPal-Request-Id": str(uuid.uuid4()) # Replace this with a unique ID.
+    }
+    payload = {
+        "name": "Video Streaming Service",
+        "description": "A video streaming service",
+        "type": "SERVICE",
+        "category": "SOFTWARE",
+        "image_url": "https://example.com/streaming.jpg",
+        "home_url": "https://example.com/home"
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 201:
+        logging.info("Product Created Successfully")
+        return response.json()['id']  # This will return the product ID and other details
+    else:
+        logging.error("Error creating product")
+        return response.text  # Handle errors
     
 
 # 創建訂閱計劃
-def create_plan(product_id, amount):
-    billing_plan = paypalrestsdk.BillingPlan({
+def create_plan(access_token, product_id, amount):
+    url = "https://api-m.sandbox.paypal.com/v1/billing/plans"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+        "PayPal-Request-Id": str(uuid.uuid4())
+    }
+    payload = {
         "product_id": product_id,
         "name": "基本月付方案",
         "description": "每月1200點（20小時）音訊轉譯。",
@@ -108,7 +145,7 @@ def create_plan(product_id, amount):
             "total_cycles": 12,
             "pricing_scheme": {
                 "fixed_price": {
-                    "value": amount,
+                    "value": str(amount),
                     "currency_code": "USD"
                 }
             }
@@ -116,24 +153,31 @@ def create_plan(product_id, amount):
         "payment_preferences": {
             "auto_bill_outstanding": True,
             "setup_fee": {
-                "value": amount,
+                "value": str(amount),
                 "currency_code": "USD"
             },
             "setup_fee_failure_action": "CONTINUE",
             "payment_failure_threshold": 3
         }
-    })
+    }
 
-    if billing_plan.create():
-        print("Plan Created Successfully")
-        return billing_plan.id
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 201:
+        logging.info("Plan Created Successfully")
+        return response.json()['id']
     else:
-        print(billing_plan.error)
-        return None
+        logging.error("Error creating plan")
+        return response.text
 
 # 創建訂閱實例
-def create_subscription(plan_id, start_time, customer_email, given_name, surname):
-    subscription = paypalrestsdk.Subscription({
+def create_subscription(access_token, plan_id, start_time, customer_email, given_name, surname):
+    url = "https://api-m.sandbox.paypal.com/v1/billing/subscriptions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+        "PayPal-Request-Id": str(uuid.uuid4())  # Ensure this is unique for each request
+    }
+    payload = {
         "plan_id": plan_id,
         "start_time": start_time,
         "subscriber": {
@@ -153,14 +197,14 @@ def create_subscription(plan_id, start_time, customer_email, given_name, surname
                 "payee_preferred": "IMMEDIATE_PAYMENT_REQUIRED"
             }
         }
-    })
+    }
 
-    if subscription.create():
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 201:
         logging.info("Subscription Created Successfully")
-        print("Subscription Created Successfully")
-        return subscription
+        return response.json()  # This should return the subscription details
     else:
-        print(subscription.error)
+        logging.error(f"Error creating subscription: {response.text}")
         return None
 
 

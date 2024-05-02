@@ -565,12 +565,13 @@
 
         const url = document.getElementById("youtubeUrl").value;
         const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
+        const audioLength = document.getElementById("duration").textContent.split(": ")[1]; // 從界面獲取影片時間
         fetch("/process_video", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp }),
+          body: JSON.stringify({ youtubeUrl: url, audioLength: audioLength, YT_addTimestamp: YT_addTimestamp }),
         })
           .then((response) => response.json())
           .then((data) => {

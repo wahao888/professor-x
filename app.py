@@ -78,6 +78,12 @@ google_bp = make_google_blueprint(
     client_id=google_client_id,
     client_secret=google_client_secret,
     redirect_to="index",
+    scope=[
+        "https://www.googleapis.com/auth/userinfo.email", 
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "openid"
+        ]
+
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
@@ -86,7 +92,8 @@ client = OpenAI(
     api_key=openai_api_key,
 )
 
-
+# ======================== 基本設定 以上 ========================
+# ======================== 進入頁面初始設定 以下 ========================
 
 @app.route("/")
 def welcome():
@@ -104,11 +111,17 @@ def index():
 
             google_id = userinfo.get("id")
             name = userinfo.get("name")
+            email = userinfo.get("email") 
+            given_name = userinfo.get("given_name")
+            family_name = userinfo.get("family_name")
             
             # 構建要存儲的用戶信息字典，包括令牌
             user_info_to_store = {
                 "google_id": google_id,  # Google ID
                 "name": name,  # 使用者名稱
+                "email": email,  # 電子郵件地址
+                "given_name": given_name,  # 名字
+                "family_name": family_name,  # 姓氏
             }
 
             # 檢查數據庫是否已有該使用者
@@ -127,8 +140,11 @@ def index():
 
             session['google_id'] = google_id
             session['name'] = name
+            session['email'] = email
+            session['given_name'] = given_name
+            session['family_name'] = family_name
             session['user_points'] = user_points
-            print("session資訊：",session['google_id'], session['name'], session['user_points'])
+            print("session資訊：",session)
             logging.info(f"User {name} logged in. Points: {user_points}")
 
 
@@ -139,9 +155,46 @@ def index():
     
     return render_template('index.html', user_name=name, user_points=user_points)
 
+# ======================== 進入頁面初始設定 以上 ========================
 
+# ====================== 設定免費方案 以下 ======================
+# class TranscriptionService:
+#     def __init__(self, db):
+#         self.db = db  # 傳入MongoDB的連接來處理配額數據
 
+#     def check_quota(self, user_id):
+#         """檢查用戶當日配額"""
+#         today = datetime.now().date()
+#         user_quota = self.db.users_db.find_one({"user_id": user_id, "date": today.strftime("%Y-%m-%d")})
+#         if user_quota is None:
+#             # 初始化配額
+#             user_quota = {"user_id": user_id, "date": today.strftime("%Y-%m-%d"), "count": 0, "time_used": 0}
+#             self.db.users_db.insert_one(user_quota)
+#         return user_quota
 
+#     def can_transcribe(self, user_id, audio_length):
+#         """判斷用戶是否可以轉錄新的音訊"""
+#         quota = self.check_quota(user_id)
+#         if quota['count'] < 3 and quota['time_used'] + audio_length <= 15:
+#             return True
+#         return False
+
+#     def update_quota(self, user_id, audio_length):
+#         """更新用戶配額"""
+#         if self.can_transcribe(user_id, audio_length):
+#             self.db.users_db.update_one(
+#                 {"user_id": user_id, "date": datetime.now().date().strftime("%Y-%m-%d")},
+#                 {"$inc": {"count": 1, "time_used": audio_length}}
+#             )
+#             return True
+#         return False
+
+# # 初始化TranscriptionService
+# transcription_service = TranscriptionService(client)
+
+# ===================== 設定免費方案 以上 =====================
+
+# ===================== 功能設定 以下 =====================
 
 # 從youtube獲取音訊資訊
 @app.route('/get_video_info', methods=['POST'])
@@ -494,9 +547,15 @@ def process_video():
 @app.route('/process_audio', methods=['POST'])
 def process_audio():
     data = request.json
+    user_id = session.get('google_id')
     filename = data.get('fileName')
+    audio_length = data.get('audioLength', 0)  # 獲取音訊長度
     add_timestamp = data.get('Audio_addTimestamp')
     estimated_cost = session.get('estimated_cost', 0)
+
+    # if not transcription_service.can_transcribe(user_id, audio_length):
+    #     return jsonify({"success": False, "message": "今日轉錄次數已達上限或超過單次轉錄時間上限"}), 403
+
 
     # 語音轉文字
     segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
@@ -531,6 +590,11 @@ def process_audio():
 
         # 數據保存成功後扣除點數
         success, message = deduct_user_points(google_id, estimated_cost)
+
+        # # 更新免費方案配額
+        # transcription_service.update_quota(user_id, audio_length)
+        # logging.info(f"User {user_id} quota updated after transcription.")
+
         if not success:
             logging.error("Failed to deduct points after saving content.")
             raise Exception(message)  # Optionally handle this situation
@@ -586,7 +650,6 @@ def get_user_contents():
 
 
 
-# ========== 付款相關 以下 ==========
 
 
 # 讓使用者根據分類檢索內容
@@ -603,6 +666,7 @@ def get_contents_by_category(category_id):
     return jsonify(results)
 
 
+# ========== 付款相關 以下 ==========
 
 # 支付頁面
 @app.route('/payment')
@@ -702,7 +766,7 @@ def paypal_webhook():
     return jsonify(success=True)
 
 
-@app.route('/subscribe/<amount>', methods=['POST'])
+@app.route('/subscribe/<amount>')
 def subscribe(amount):
 
     # 把amount存到session
@@ -710,23 +774,28 @@ def subscribe(amount):
     logging.info(f"Subscribing to plan with amount: {amount}")
 
     # 從前端表單獲取數據
-    start_time = request.form.get('start_time')
-    customer_email = request.form.get('email')
-    given_name = request.form.get('given_name')
-    surname = request.form.get('surname')
+    start_time = datetime.now().isoformat()
+    customer_email = session.get('email')
+    given_name = session.get('given_name','')
+    surname = session.get('family_name','')
+    logging.info(f"start_time: {start_time}, Customer email: {customer_email}, given_name: {given_name} ,surname: {surname}")
     
     # 產品和計劃
-    product_id = paypal_integration.create_product()
-    plan_id = paypal_integration.create_plan(product_id, amount)
-    
+    access_token = paypal_integration.get_access_token(paypal_client_id, paypal_secret)
+    product_id = paypal_integration.create_product(access_token)
+    plan_id = paypal_integration.create_plan(access_token, product_id, amount)
+    logging.info(f"Plan ID: {plan_id}")
+
     # 創建訂閱
     subscription = paypal_integration.create_subscription(plan_id, start_time, customer_email, given_name, surname)
     logging.info(f"Subscription created: {subscription}")
     if subscription:
         # 將用戶重定向到PayPal進行支付
+        logging.info("Redirecting to PayPal for subscription.")
         return redirect(subscription.get('links')[1].get('href'))
     else:
         session.pop('amount', None)
+        logging.error("Subscription creation failed.")
         return "訂閱創建失敗，請重試！", 400
 
 
