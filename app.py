@@ -5,7 +5,7 @@ import yt_dlp
 from pydub import AudioSegment
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 from openai import OpenAI
 from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
@@ -115,28 +115,40 @@ def index():
             given_name = userinfo.get("given_name")
             family_name = userinfo.get("family_name")
             
-            # 構建要存儲的用戶信息字典，包括令牌
+            # 構建要存儲的用戶信息字典
             user_info_to_store = {
                 "google_id": google_id,  # Google ID
                 "name": name,  # 使用者名稱
                 "email": email,  # 電子郵件地址
                 "given_name": given_name,  # 名字
                 "family_name": family_name,  # 姓氏
+                "last_bonus_date": None,
+                "points": 0
             }
 
             # 檢查數據庫是否已有該使用者
             existing_user = users_db.find_one({"google_id": google_id})
             if existing_user:
                 # 如果使用者已存在
+                user_info_to_store["last_bonus_date"] = existing_user.get("last_bonus_date")
+                user_info_to_store["points"] = existing_user.get("points", 0)
                 users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
             else:
                 # 如果使用者不存在，創建新使用者
                 users_db.insert_one(user_info_to_store)
 
-            # 取得用戶點數
-            user_points = 0
-            user_data = users_db.find_one({"google_id": google_id})
-            user_points = round(user_data.get('points', 0), 2)
+            # 更新點數
+            user_points = user_info_to_store["points"]
+            last_bonus_date = user_info_to_store.get("last_bonus_date")
+            current_date = datetime.now().date()
+
+            # 檢查是否應該添加獎勵點數
+            if last_bonus_date is None or current_date > last_bonus_date + timedelta(days=30):
+                user_points += 100
+                users_db.update_one({"google_id": google_id}, {"$set": {
+                    "points": user_points,
+                    "last_bonus_date": current_date
+                }})
 
             session['google_id'] = google_id
             session['name'] = name

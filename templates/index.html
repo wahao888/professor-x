@@ -353,8 +353,13 @@
       <div class="header-right-container">
         <div class="welcome-message">歡迎，{{ user_name }}！</div>
         <div id="user-points" class="user-points">您目前有 {{ user_points }} 點</div>
+        <button id="daily-checkin" class="subscribe-button" onclick="showCalendar()">每日簽到</button>
         <a href="/payment" class="subscribe-button">訂閱</a>
       </div>
+    </div>
+
+    <div id="calendar" style="display:none;">
+      <!-- 月曆 -->
     </div>
 
     <div class="main-container">
