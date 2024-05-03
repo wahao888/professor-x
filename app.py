@@ -115,6 +115,7 @@ def index():
             given_name = userinfo.get("given_name")
             family_name = userinfo.get("family_name")
             
+            
             # 構建要存儲的用戶信息字典
             user_info_to_store = {
                 "google_id": google_id,  # Google ID
@@ -123,13 +124,14 @@ def index():
                 "given_name": given_name,  # 名字
                 "family_name": family_name,  # 姓氏
                 "last_bonus_date": None,
-                "points": 0
+                "points": 0,
             }
 
             # 檢查數據庫是否已有該使用者
             existing_user = users_db.find_one({"google_id": google_id})
             if existing_user:
                 # 如果使用者已存在
+                consecutive_days = existing_user.get("consecutive_days", 0)
                 user_info_to_store["last_bonus_date"] = existing_user.get("last_bonus_date")
                 user_info_to_store["points"] = existing_user.get("points", 0)
                 users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
@@ -143,11 +145,11 @@ def index():
             current_date = datetime.now().date()
 
             # 檢查是否應該添加獎勵點數
-            if last_bonus_date is None or current_date > last_bonus_date + timedelta(days=30):
+            if last_bonus_date is None or current_date > last_bonus_date.date() + timedelta(days=30):
                 user_points += 100
                 users_db.update_one({"google_id": google_id}, {"$set": {
                     "points": user_points,
-                    "last_bonus_date": current_date
+                    "last_bonus_date": datetime.combine(current_date, datetime.min.time())
                 }})
 
             session['google_id'] = google_id
@@ -156,8 +158,9 @@ def index():
             session['given_name'] = given_name
             session['family_name'] = family_name
             session['user_points'] = user_points
-            print("session資訊：",session)
+            # print("session資訊：",session)
             logging.info(f"User {name} logged in. Points: {user_points}")
+            print(f"User {name} logged in. Points: {user_points} Consecutive days: {consecutive_days}")
 
 
         else:
@@ -165,7 +168,7 @@ def index():
     except TokenExpiredError:
         return redirect(url_for("google.login"))  # 引導用戶重新登入
     
-    return render_template('index.html', user_name=name, user_points=user_points)
+    return render_template('index.html', user_name=name, user_points=user_points, consecutive_days=consecutive_days)
 
 # ======================== 進入頁面初始設定 以上 ========================
 
@@ -205,6 +208,60 @@ def index():
 # transcription_service = TranscriptionService(client)
 
 # ===================== 設定免費方案 以上 =====================
+
+# ===================== 簽到設定 以下 =====================
+@app.route("/checkin", methods=["POST"])
+def checkin():
+    google_id = session.get("google_id")
+    if not google_id:
+        return jsonify(success=False, message="尚未登錄")
+
+    user = users_db.find_one({"google_id": google_id})
+    if not user:
+        return jsonify(success=False, message="找不到用戶")
+
+    today = datetime.now().date()
+    today_datetime = datetime.combine(today, datetime.min.time())
+    checkin_dates = user.get("checkin_dates", [])
+    last_checkin_date = checkin_dates[-1] if checkin_dates else None
+
+    # 如果今日已簽到或最後一次簽到與今天同一天，直接返回
+    if last_checkin_date == today_datetime:
+        return jsonify(success=False, message="今日已簽到")
+    
+    # 計算連續簽到日數
+    if last_checkin_date:
+        delta = today - last_checkin_date.date()
+        if delta.days == 1:
+            consecutive_days = user.get("consecutive_days", 0) + 1
+        else:
+            consecutive_days = 1
+    else:
+        consecutive_days = 1
+
+    points = user.get("points", 0)
+    points += 5
+
+    # 連續簽到7日獎勵50點
+    if consecutive_days == 7:
+        points += 50
+
+    checkin_dates.append(today_datetime)
+
+    users_db.update_one({"google_id": google_id}, {
+        "$set": {
+            "points": points,
+            "checkin_dates": checkin_dates,
+            "consecutive_days": consecutive_days
+        }
+    })
+
+    session['user_points'] = points
+    print(f"用戶 {google_id} 簽到成功，點數：{points}，已經連續簽到 {consecutive_days} 天")
+    logging.info(f"User {google_id} checked in successfully. Points: {points}，Consecutive days: {consecutive_days}")
+    return jsonify(success=True, points=points, consecutive_days=consecutive_days)
+
+# ===================== 簽到設定 以上 =====================
 
 # ===================== 功能設定 以下 =====================
 

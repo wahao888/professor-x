@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Professor X</title>
 
     <style>
@@ -49,6 +50,21 @@
             display: flex;
             align-items: center;
         }
+        .checkin-button {
+            padding: 10px 20px;
+            background-color: #F77E66;
+            color: white;
+            text-decoration: none; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        .checkin-button:hover {
+            background-color: #A1706B;
+        }
+
         .subscribe-button {
             padding: 10px 20px;
             background-color: #4CAF50;
@@ -332,7 +348,6 @@
 
   
     </style>
-
   </head>
   <body>
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -352,15 +367,13 @@
       <a id="logo" href="/">Professor X</a>
       <div class="header-right-container">
         <div class="welcome-message">歡迎，{{ user_name }}！</div>
-        <div id="user-points" class="user-points">您目前有 {{ user_points }} 點</div>
-        <button id="daily-checkin" class="subscribe-button" onclick="showCalendar()">每日簽到</button>
+        <div id="user-points" class="user-points">您目前有 {{ user_points }} 點，</div>
+        <div id="consecutive_days" class="user-points">您已連續簽到 {{ consecutive_days }} 天！</div>
+        <button id="daily-checkin" class="checkin-button" onclick="checkIn()">每日簽到+5點</button>
         <a href="/payment" class="subscribe-button">訂閱</a>
       </div>
     </div>
-
-    <div id="calendar" style="display:none;">
-      <!-- 月曆 -->
-    </div>
+  
 
     <div class="main-container">
       <div id="transcriptionList" class="list-container">
@@ -464,6 +477,35 @@
 
       });
       
+
+      // 簽到
+      function checkIn() {
+        fetch('/checkin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('簽到成功！您目前有 ' + data.points + ' 點');
+                document.getElementById('consecutive_days').textContent = `您已連續簽到 ${data.consecutive_days} 天`;
+                document.getElementById('user-points').textContent = `您目前有 ${data.points} 點`;
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          error.json?.().then(errorMessage => {
+              console.error('Response body:', errorMessage);
+          }).catch(() => {
+              console.error('Failed to parse error as JSON');
+          });
+      });
+    }
+    
 
 
     // YT預估消耗

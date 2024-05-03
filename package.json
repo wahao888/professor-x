@@ -1,5 +1,18 @@
 {
   "dependencies": {
+    "@fullcalendar/core": "^6.1.11",
+    "@fullcalendar/daygrid": "^6.1.11",
+    "fullcalendar": "^6.1.11",
     "openai": "^4.33.0"
-  }
+  },
+  "name": "professor-x-gae",
+  "version": "1.0.0",
+  "main": "playground-1.mongodb.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
