@@ -18,7 +18,7 @@ logging.basicConfig(
 # 初始化 PayPal SDK
 def init_paypal(client_id, client_secret):
     paypalrestsdk.configure({
-        "mode": "sandbox",  # 或 "live" 如果你準備上線
+        "mode": "live",  # 或 "live" 如果你準備上線
         "client_id": client_id,
         "client_secret": client_secret
     })
