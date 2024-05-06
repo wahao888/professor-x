@@ -404,7 +404,7 @@
               <form id="fileUploadForm" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; width: 100%;">
                 <label for="audioFileInput" id="choosefile-button">選擇檔案</label><!-- 自定義的上傳按鈕 -->
                 <div id="fileNameDisplay" class="fileNameDisplay">尚未選擇檔案</div>
-                <input type="file" name="audioFile" id="audioFileInput" accept=".mp3"><!-- 原生的選擇檔案 -->
+                <input type="file" name="audioFile" id="audioFileInput" accept=".mp3,.m4a"><!-- 原生的選擇檔案 -->
                 <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" >上傳檔案</button>
                 <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled>音訊轉文字</button>
               </form>
@@ -426,7 +426,7 @@
             </div>
           </div>
           -->
-          <div id="progressBar" class="progressBar" style="display: none">處理中...</div>
+          <div id="progressBar" class="progressBar" style="display: none">處理中...請問關閉或重整瀏覽器...</div>
         </div>
 
         <div class="content-container">
