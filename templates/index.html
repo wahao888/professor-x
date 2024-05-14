@@ -550,14 +550,33 @@
     document.addEventListener("DOMContentLoaded", function() {
       var fileInput = document.getElementById('audioFileInput');
       var uploadButton = document.getElementById('uploadButton');
+      var transcribeButton = document.getElementById('transcribeButton');
   
       fileInput.addEventListener('change', function() {
-          if (fileInput.files.length > 0) {
-              uploadButton.disabled = false;  // 啟用上傳按鈕
-              uploadButton.classList.replace("button-grey", "button-green"); // 更改按鈕風格
+          var file = fileInput.files[0];
+          if (file) {
+              var fileSize = file.size / 1024 / 1024; // 轉換為MB
+              if (fileSize > 50) {
+                  alert("檔案大小超過50MB，請選擇其他檔案。");
+                  this.value = ''; // 重置檔案輸入
+                  document.getElementById('fileNameDisplay').textContent = '尚未選擇檔案';
+                  uploadButton.disabled = true; // 禁用上傳按鈕
+                  transcribeButton.disabled = true; // 禁用轉錄按鈕
+                  uploadButton.classList.replace("button-green", "button-grey");
+                  transcribeButton.classList.replace("button-green", "button-grey");
+              } else {
+                  document.getElementById('fileNameDisplay').textContent = file.name; // 顯示檔案名稱
+                  uploadButton.disabled = false;  // 啟用上傳按鈕
+                  transcribeButton.disabled = false;  // 啟用轉錄按鈕
+                  uploadButton.classList.replace("button-grey", "button-green");
+                  transcribeButton.classList.replace("button-grey", "button-green");
+              }
           } else {
               uploadButton.disabled = true;  // 禁用上傳按鈕
-              uploadButton.classList.replace("button-green", "button-grey"); // 更改按鈕風格
+              transcribeButton.disabled = true;  // 禁用轉錄按鈕
+              uploadButton.classList.replace("button-green", "button-grey");
+              transcribeButton.classList.replace("button-green", "button-grey");
+              document.getElementById('fileNameDisplay').textContent = '尚未選擇檔案';
           }
       });
   });
