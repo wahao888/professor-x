@@ -22,6 +22,10 @@ import logging
 from werkzeug.utils import secure_filename # 用於安全地處理文件名
 import json
 import requests
+import smtplib # 用於發送電子郵件
+from email.mime.text import MIMEText # 用於創建電子郵件正文
+from email.mime.multipart import MIMEMultipart # 用於創建電子郵件
+
 
 app = Flask(__name__)
 CORS(app)
@@ -72,7 +76,7 @@ test_collection = db['test_collection']
 content_db = db["contents"]
 google_db = db["google_login"]
 users_db = db['users']
-subscriptions_db = db['subscriptions']
+email_subscriptions_db = db['email_subscriptions']
 
 # 設置google login
 google_bp = make_google_blueprint(
@@ -872,6 +876,35 @@ def payment_cancelled():
 
 # ========== 付款相關 以上 ==========
 # ========== Email訂閱 以下 ==========
+
+# 配置SMTP服務器
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SMTP_USERNAME = "wahao777@gmail.com"
+SMTP_PASSWORD = "Funky8211"
+
+# 發送Email的函數
+def send_confirmation_email(to_email):
+    msg = MIMEMultipart()
+    msg["From"] = SMTP_USERNAME
+    msg["To"] = to_email
+    msg["Subject"] = "Lillian-AI 訂閱確認"
+
+    body = "謝謝您的訂閱Lillian-AI！\n\n" \
+           "如有最新消息將會立即通知您！"
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.sendmail(SMTP_USERNAME, to_email, msg.as_string())
+            logging.info(f"Confirmation email sent to {to_email}")
+    except Exception as e:
+        logging.error(f"Error sending email: {e}")
+
+
+
 # 新增訂閱Email的端點
 @app.route("/emailsubscribe", methods=["POST"])
 def subscribe():
@@ -881,13 +914,14 @@ def subscribe():
     if not email or '@' not in email:
         return jsonify({"success": False, "message": "請提供有效的Email地址"}), 400
 
-    subscription = {
+    email_subscriptions = {
         "email": email,
         "timestamp": datetime.now()
     }
 
     try:
-        subscriptions_db.insert_one(subscription)
+        email_subscriptions_db.insert_one(email_subscriptions)
+        send_confirmation_email(email)
         logging.info(f"New subscription added: {email}")
         return jsonify({"success": True, "message": "訂閱成功，請檢查您的郵箱以確認訂閱。"})
     except Exception as e:
