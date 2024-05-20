@@ -923,7 +923,7 @@ def subscribe():
         email_subscriptions_db.insert_one(email_subscriptions)
         send_confirmation_email(email)
         logging.info(f"New subscription added: {email}")
-        return jsonify({"success": True, "message": "訂閱成功，請檢查您的郵箱以確認訂閱。"})
+        return jsonify({"success": True, "message": "訂閱成功！"})
     except Exception as e:
         logging.error(f"Error adding subscription: {e}")
         return jsonify({"success": False, "message": "訂閱失敗，請重試。"}), 500
