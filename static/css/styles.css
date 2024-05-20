@@ -1,0 +1,192 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.header .logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+.header .nav {
+    display: flex;
+    gap: 20px;
+}
+.header .nav a {
+    text-decoration: none;
+    color: #333333;
+    font-weight: bold;
+}
+.header .nav a.button {
+    background-color: #d32f2f;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+.main-content {
+    display: flex;
+    padding: 50px;
+    background-color: #ffffff;
+    position: relative;
+}
+.left-content {
+    width: 40%;
+    z-index: 1;
+}
+.left-content .text-content {
+    max-width: 600px;
+}
+.left-content .text-content h1 {
+    font-size: 90px;
+    margin: 0;
+    white-space: nowrap; /* 避免換行 */
+}
+.left-content .text-content p {
+    font-size: 18px;
+    color: #555555;
+}
+.left-content .text-content .button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #d32f2f;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.right-content {
+    width: 60%;
+    height: 900px; /* 確保高度適當 */
+    display: flex;
+    position: relative;
+}
+.image-container {
+    width: 80%; /* 右邊三分之二 */
+    height: 100%;
+    max-width: 500px;
+    background: url('/static/images/welcomepage01.jpg') no-repeat center center;
+    background-size: cover;
+    border-radius: 20px;
+    opacity: 0.7;
+    overflow: hidden;
+    z-index: 0;
+    margin-left: 50px;
+}
+.overlay-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 2;
+}
+.overlay-content .card {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px 0;
+    width: 300px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.overlay-content .card:first-child {
+    position: absolute;
+    top: 70px;
+    left: 0;
+}
+.overlay-content .card:last-child {
+    position: absolute;
+    top: 280px;
+    right: 0;
+}
+.overlay-content .card h2 {
+    font-size: 24px;
+    margin: 0 0 10px;
+    color: #333333;
+}
+.overlay-content .card p {
+    font-size: 16px;
+    color: #333333;
+}
+.overlay-content .highlight {
+    color: #1e88e5;
+}
+.features {
+    display: flex;
+    justify-content: space-around;
+    padding: 50px;
+    background-color: #ffffff;
+}
+.features .feature {
+    text-align: center;
+    padding: 20px;
+    width: 22%;
+}
+.features .feature img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+}
+.features .feature h3 {
+    font-size: 24px;
+    color: #333333;
+}
+.features .feature p {
+    font-size: 16px;
+    color: #555555;
+}
+.testimonial {
+    text-align: center;
+    padding: 50px;
+    background-color: #f5f5f5;
+    color: #333333;
+}
+.testimonial p {
+    font-size: 18px;
+    font-style: italic;
+}
+.testimonial .author {
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.subscribe {
+    text-align: center;
+    padding: 50px;
+    background-color: #f5f5f5;
+}
+.subscribe p {
+    font-size: 18px;
+}
+.subscribe form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+.subscribe input[type="email"] {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+.subscribe input[type="submit"] {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #9c27b0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

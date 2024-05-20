@@ -72,6 +72,7 @@ test_collection = db['test_collection']
 content_db = db["contents"]
 google_db = db["google_login"]
 users_db = db['users']
+subscriptions_db = db['subscriptions']
 
 # 設置google login
 google_bp = make_google_blueprint(
@@ -97,7 +98,7 @@ client = OpenAI(
 
 @app.route("/")
 def welcome():
-    return render_template('welcome.html')
+    return render_template('welcome02.html')
 
 @app.route("/index")
 def index():
@@ -821,55 +822,78 @@ def payment_cancelled():
     return redirect(url_for('index'))  # Redirect to the homepage
 
 
-# 訂閱制
-# 設置Webhook監聽器
-@app.route('/paypal/webhook', methods=['POST'])
-def paypal_webhook():
-    data = request.json
-    if data['event_type'] == 'BILLING.SUBSCRIPTION.ACTIVATED':
-        # 處理訂閱啟動事件
-        print("訂閱已啟動")
-    elif data['event_type'] == 'BILLING.SUBSCRIPTION.CANCELLED':
-        # 處理訂閱取消事件
-        print("訂閱已取消")
-    return jsonify(success=True)
+# # 訂閱制
+# # 設置Webhook監聽器
+# @app.route('/paypal/webhook', methods=['POST'])
+# def paypal_webhook():
+#     data = request.json
+#     if data['event_type'] == 'BILLING.SUBSCRIPTION.ACTIVATED':
+#         # 處理訂閱啟動事件
+#         print("訂閱已啟動")
+#     elif data['event_type'] == 'BILLING.SUBSCRIPTION.CANCELLED':
+#         # 處理訂閱取消事件
+#         print("訂閱已取消")
+#     return jsonify(success=True)
 
 
-@app.route('/subscribe/<amount>')
-def subscribe(amount):
+# @app.route('/subscribe/<amount>')
+# def subscribe(amount):
 
-    # 把amount存到session
-    session['amount'] = amount
-    logging.info(f"Subscribing to plan with amount: {amount}")
+#     # 把amount存到session
+#     session['amount'] = amount
+#     logging.info(f"Subscribing to plan with amount: {amount}")
 
-    # 從前端表單獲取數據
-    start_time = datetime.now().isoformat()
-    customer_email = session.get('email')
-    given_name = session.get('given_name','')
-    surname = session.get('family_name','')
-    logging.info(f"start_time: {start_time}, Customer email: {customer_email}, given_name: {given_name} ,surname: {surname}")
+#     # 從前端表單獲取數據
+#     start_time = datetime.now().isoformat()
+#     customer_email = session.get('email')
+#     given_name = session.get('given_name','')
+#     surname = session.get('family_name','')
+#     logging.info(f"start_time: {start_time}, Customer email: {customer_email}, given_name: {given_name} ,surname: {surname}")
     
-    # 產品和計劃
-    access_token = paypal_integration.get_access_token(paypal_client_id, paypal_secret)
-    product_id = paypal_integration.create_product(access_token)
-    plan_id = paypal_integration.create_plan(access_token, product_id, amount)
-    logging.info(f"Plan ID: {plan_id}")
+#     # 產品和計劃
+#     access_token = paypal_integration.get_access_token(paypal_client_id, paypal_secret)
+#     product_id = paypal_integration.create_product(access_token)
+#     plan_id = paypal_integration.create_plan(access_token, product_id, amount)
+#     logging.info(f"Plan ID: {plan_id}")
 
-    # 創建訂閱
-    subscription = paypal_integration.create_subscription(plan_id, start_time, customer_email, given_name, surname)
-    logging.info(f"Subscription created: {subscription}")
-    if subscription:
-        # 將用戶重定向到PayPal進行支付
-        logging.info("Redirecting to PayPal for subscription.")
-        return redirect(subscription.get('links')[1].get('href'))
-    else:
-        session.pop('amount', None)
-        logging.error("Subscription creation failed.")
-        return "訂閱創建失敗，請重試！", 400
+#     # 創建訂閱
+#     subscription = paypal_integration.create_subscription(plan_id, start_time, customer_email, given_name, surname)
+#     logging.info(f"Subscription created: {subscription}")
+#     if subscription:
+#         # 將用戶重定向到PayPal進行支付
+#         logging.info("Redirecting to PayPal for subscription.")
+#         return redirect(subscription.get('links')[1].get('href'))
+#     else:
+#         session.pop('amount', None)
+#         logging.error("Subscription creation failed.")
+#         return "訂閱創建失敗，請重試！", 400
 
 
 
 # ========== 付款相關 以上 ==========
+# ========== Email訂閱 以下 ==========
+# 新增訂閱Email的端點
+@app.route("/emailsubscribe", methods=["POST"])
+def subscribe():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email or '@' not in email:
+        return jsonify({"success": False, "message": "請提供有效的Email地址"}), 400
+
+    subscription = {
+        "email": email,
+        "timestamp": datetime.now()
+    }
+
+    try:
+        subscriptions_db.insert_one(subscription)
+        logging.info(f"New subscription added: {email}")
+        return jsonify({"success": True, "message": "訂閱成功，請檢查您的郵箱以確認訂閱。"})
+    except Exception as e:
+        logging.error(f"Error adding subscription: {e}")
+        return jsonify({"success": False, "message": "訂閱失敗，請重試。"}), 500
+
 
 
 

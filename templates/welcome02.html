@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lillian-AI</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Lillian-AI</div>
+        <div class="nav">
+            <a href="index.html" class="button">Google 登入後免費使用</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="left-content">
+            <div class="text-content">
+                <h1>Professor-X</h1>
+                <h1>快速轉錄、摘要!</h1>
+                <p>Professor-X是一個強大的工具，能夠幫助您將YouTube影片或自己上傳的聲音檔案快速轉換成文字稿並整理出重點。這個工具不僅能夠將內容轉錄成文字，還能夠根據您的需求添加時間戳記，以便更快速地為您的影片加上字幕。</p>
+                <a href="index.html" class="button">Google 登入後免費使用</a>
+            </div>
+        </div>
+        <div class="right-content">
+            <div class="overlay-content">
+                <div class="card">
+                    <h2>重點摘要</h2>
+                    <p>它能夠<span class="highlight">自動摘要</span>，將重點整理出來，讓您快速獲取所需信息。</p>
+                </div>
+                <div class="card">
+                    <h2>地表最快速</h2>
+                    <p>無論您是想從<span class="highlight">YouTube</span>上學習新知識，還是需要快速整理會議紀錄，<span class="highlight">30分鐘的影片轉錄只需60秒</span>！</p>
+                </div>
+            </div>
+            <div class="image-container"></div>
+        </div>
+    </div>
+    <div class="features">
+        <div class="feature">
+            <img src="/static/images/icon1.png" alt="擷取">
+            <h3>擷取</h3>
+            <p>從YouTube影片或聲音檔案中擷取關鍵訊息，快速轉換成文字稿。</p>
+        </div>
+        <div class="feature">
+            <img src="/static/images/icon2.png" alt="摘要">
+            <h3>摘要</h3>
+            <p>它能自動摘要出重點，讓您快速獲取內容精華，節省時間。</p>
+        </div>
+        <div class="feature">
+            <img src="/static/images/icon3.png" alt="時間戳">
+            <h3>時間戳</h3>
+            <p>您可以根據需求添加時間戳，更容易地尋找特定內容，提高工作效率。</p>
+        </div>
+        <div class="feature">
+            <img src="/static/images/icon4.png" alt="整理">
+            <h3>整理</h3>
+            <p>不論是學習新知識還是整理會議紀錄，Professor-X都能幫助您快速整理成文字稿，讓工作更輕鬆。</p>
+        </div>
+    </div>
+    <div class="testimonial">
+        <p>“Professor-X真是太棒了！它幫助我節省了大量的時間。這個工具不僅將影片轉錄成文字，還能自動提取出重點，讓我能夠快速獲取我所需的內容。我強烈推薦Professor-X給所有需要快速轉錄和摘要影片內容的人！”</p>
+        <div class="author">— Jean Huang</div>
+    </div>
+    <div class="subscribe">
+        <h2>訂閱我們</h2>
+        <p>即時獲取最新更新資訊，享受快速、精準的影音轉錄與摘要服務，讓您的學習與工作更輕鬆！</p>
+        <form id="subscribeForm">
+            <input type="email" placeholder="Email Address" id="emailInput">
+            <input type="submit" value="訂閱">
+        </form>
+    </div>
+    <script>
+        document.getElementById('subscribeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var email = document.getElementById('emailInput').value;
+
+            if (!email || !email.includes('@')) {
+                alert('請輸入有效的電子郵件地址');
+                return;
+            }
+
+            fetch('/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('訂閱成功！請檢查您的郵箱以確認訂閱。');
+                } else {
+                    alert('訂閱失敗，請重試。');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('訂閱失敗，請重試。');
+            });
+        });
+    </script>
+</body>
+</html>
