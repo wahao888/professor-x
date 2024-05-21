@@ -637,8 +637,8 @@
           var file = fileInput.files[0];
           if (file) {
               var fileSize = file.size / 1024 / 1024; // 轉換為MB
-              if (fileSize > 50) {
-                  alert("檔案大小超過50MB，請選擇其他檔案。");
+              if (fileSize > 20) {
+                  alert("檔案大小超過20MB，請選擇其他檔案。");
                   this.value = ''; // 重置檔案輸入
                   document.getElementById('fileNameDisplay').textContent = '尚未選擇檔案';
                   uploadButton.disabled = true; // 禁用上傳按鈕
