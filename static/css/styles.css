@@ -33,12 +33,13 @@ body {
 }
 .main-content {
     display: flex;
+    flex-wrap: wrap; /* 讓內容自動換行 */
     padding: 50px;
     background-color: #ffffff;
     position: relative;
 }
 .left-content {
-    width: 40%;
+    width: 100%;
     z-index: 1;
 }
 .left-content .text-content {
@@ -48,6 +49,12 @@ body {
     font-size: 90px;
     margin: 0;
     white-space: nowrap; /* 避免換行 */
+}
+@media (max-width: 767px) {
+    .left-content .text-content h1 {
+        font-size: 50px; /* 手機上字體較小 */
+        white-space: normal; /* 允許換行 */
+    }
 }
 .left-content .text-content p {
     font-size: 18px;
@@ -64,13 +71,14 @@ body {
     font-weight: bold;
 }
 .right-content {
-    width: 60%;
-    height: 900px; /* 確保高度適當 */
+    width: 100%;
+    height: 500px; /* 確保高度適當 */
     display: flex;
     position: relative;
+    margin-top: 20px;
 }
 .image-container {
-    width: 80%; /* 右邊三分之二 */
+    width: 80%;
     height: 100%;
     max-width: 500px;
     background: url('/static/images/welcomepage01.jpg') no-repeat center center;
@@ -79,11 +87,11 @@ body {
     opacity: 0.7;
     overflow: hidden;
     z-index: 0;
-    margin-left: 50px;
+    margin-left: 20px;
 }
 .overlay-content {
     position: absolute;
-    top: 50%;
+    top: 45%;
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -99,6 +107,7 @@ body {
     width: 300px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
 .overlay-content .card:first-child {
     position: absolute;
     top: 70px;
@@ -108,6 +117,32 @@ body {
     position: absolute;
     top: 280px;
     right: 0;
+}
+@media (max-width: 767px) {
+    .overlay-content {
+        position: absolute; /* 保持絕對定位 */
+        top: 50%;
+        left: 30%;
+        transform: translate(-50%, -50%);
+        z-index: 2; /* 確保在圖片上方 */
+    }
+    .overlay-content .card {
+        position: relative; /* 設為相對定位 */
+        margin: 20px auto; /* 置中對齊 */
+        width: 90%; /* 調整寬度 */
+    }
+    .overlay-content .card:first-child {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: -90px; /* 向右錯位 */
+    }
+    .overlay-content .card:last-child {
+        position: relative;
+        top: auto;
+        left: -10px; /* 向左錯位 */
+        right: auto;
+    }
 }
 .overlay-content .card h2 {
     font-size: 24px;
@@ -144,6 +179,16 @@ body {
 .features .feature p {
     font-size: 16px;
     color: #555555;
+}
+@media (max-width: 767px) {
+    .features {
+        flex-direction: column;
+    }
+    .features .feature {
+        width: 100%;
+    }
+
+
 }
 .testimonial {
     text-align: center;
@@ -189,4 +234,16 @@ body {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+}
+@media (min-width: 767px) {
+    .left-content {
+        width: 40%;
+    }
+    .right-content {
+        width: 60%;
+        height: 950px; /* 恢復桌面版高度 */
+    }
+    .features .feature {
+        width: 22%;
+    }
 }

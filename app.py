@@ -686,8 +686,22 @@ def process_audio():
     })
 
 
+# ===================== 功能設定 以上 =====================
+# ===================== 匯出檔案 以下 =====================
 
+@app.route('/download_transcription', methods=['GET'])
+def download_transcription():
+    filename = request.args.get('filename')
+    if filename:
+        filepath = os.path.join('path/to/transcriptions', filename)
+        if os.path.exists(filepath):
+            return send_file(filepath, as_attachment=True)
+        else:
+            return "File not found", 404
+    else:
+        return "Filename not provided", 400
 
+# ===================== 匯出檔案 以上 =====================
 
 # 點擊標籤顯示內容
 @app.route('/get_video_content', methods=['POST'])
