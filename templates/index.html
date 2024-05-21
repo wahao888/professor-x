@@ -7,7 +7,13 @@
     <title>Professor X</title>
 
     <style>
-
+      body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4; /* 莫蘭迪灰作為背景色 */
+        color: #606060; /* 莫蘭迪深灰作為文字顏色 */
+        margin: 0;
+        padding: 20px;
+    }
       .flash-container {
         position: fixed;
         left: 50%;  /* 設定左側距離視窗左側 50% */
@@ -90,13 +96,7 @@
           margin-top: 10px; 
           margin-right: 10px;
         }
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4; /* 莫蘭迪灰作為背景色 */
-            color: #606060; /* 莫蘭迪深灰作為文字顏色 */
-            margin: 0;
-            padding: 20px;
-        }
+
         #progressBar {
             text-align: center;
             padding: 20px;
@@ -110,33 +110,41 @@
             display: flex;
             flex-direction: column; /* 使子元素垂直排列 */
             justify-content: space-between;
-            min-width: 500px; /* 設定最小寬度 */
             padding: 20px;
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
+            width: 100%; /* 設置寬度為100%以適應手機屏幕 */
         }
         .content-container {
             display: flex;
             justify-content: space-between;
-            min-width: 200px; /* 設定最小寬度 */
             background-color: #ffffff; /* 純白背景 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影 */
             border-radius: 10px; /* 圓角 */
             margin-bottom: 20px;
-            
+            width: 100%; /* 設置寬度為100%以適應手機屏幕 */
         }
         .content-container > div {
-            width: 48%;
+            width: 100%; /* 設置寬度為100%以適應手機屏幕 */
             padding: 10px;
         }
         .content-container h2 {
           margin-top: 0.5em;  /* 根據需要調整上邊距 */
           margin-bottom: 0.5em;  /* 根據需要調整下邊距 */
       }
+      @media (min-width: 767px) {
+        .content-container {
+          flex-direction: row; /* 大於767px寬度的設備上恢復橫向排列 */
+        }
+        .content-container > div {
+          width: ; /* 恢復子容器寬度 */
+        }
+      }
         .list-container {
             display: flex;
             min-width: 200px; /* 設定最小寬度 */
+            max-width: 25%; /* 設定最大寬度 */
             flex-direction: column; /* 使子元素垂直排列 */
             align-items: flex-start; /* 確保子元素在橫向上靠左對齊 */
             padding: 20px;
@@ -157,8 +165,13 @@
         }
         .url-input-container, .upload-input-container {
           display: flex;
+          flex-wrap: wrap; /* 允許子元素換行 */
           align-items: center;
           width: 100%;
+        }
+        .url-input-container input, .upload-input-container input, .upload-input-container button {
+          flex: 1 1 auto; /* 讓元素能夠根據空間自適應大小 */
+          margin: 5px 0; /* 增加按鈕和輸入框之間的間距 */
         }
         
         .input-container input {
@@ -173,7 +186,6 @@
           padding: 10px 20px;
           border-radius: 5px;
           margin-right: 10px;
-          min-width: 80px; /* 最小寬度 */
         }
         .button-grey {
           background-color: #808080; /* 莫蘭迪藍 */
@@ -216,7 +228,6 @@
       #fileNameDisplay,#youtubeUrl {
         flex-grow: 1; /* 讓輸入框佔據大部分空間 */
         display: inline-block;
-        min-width: 100px; /* 最小寬度 */
         border: none;
         font-size: 14px; /* 字體大小 */
         padding: 10px 20px; /* 內邊距 */
@@ -234,6 +245,8 @@
       #fileNameDisplay {
         vertical-align: bottom;
       }
+
+      
 
       /* 添加時間戳，隱藏原始的 checkbox */
       #YT_addTimestamp, #Audio_addTimestamp {
@@ -275,18 +288,6 @@
         margin-bottom: 20px;
         }
 
-
-        #transcriptionList {
-            width: 23%;
-            float: left;
-            box-sizing: border-box;
-        }
-        #transcriptionContent {
-            width: 75%;
-            float: right;
-            box-sizing: border-box;
-            
-        }
         .tag {
           display: block; /* 確保每個標籤都是塊級元素 */
           max-width: 100%; /* 最大寬度不超過其容器 */
@@ -306,6 +307,7 @@
 
       #videoInfo, #fileInfo{
         display: flex; /* 使用flex來排列預估時間和token消耗 */
+        width: 100%; /* 讓容器使用可用的全部寬度 */
         align-items: center; /* 中心對齊 */
         margin-top: 10px; /* 與輸入框之間的間距 */
         overflow: hidden; /* 避免長標籤溢出 */
@@ -317,11 +319,18 @@
     }
 
 
-    @media (max-width: 600px) {
-      .header-container, .main-container, .list-container, .transcription-container, .input-container, .content-container {
+    @media (max-width: 767px) {
+      body {
+        font-size: 16px; /* 增加基本字體大小 */
+    }
+      .header-container, .main-container, .list-container, .transcription-container {
           flex-direction: column;
-          width: 100%; /* 讓容器使用可用的全部寬度 */
-          padding: 5px;
+          width: 95%; /* 讓容器使用可用的全部寬度 */
+          margin: 0;
+          padding: 10px;
+      }
+      .input-container, .content-container, .info {
+        flex-direction: column; /* 在小螢幕上垂直排列 */
       }
       #logo, .subscribe-button, .welcome-message {
           text-align: center;
@@ -334,17 +343,88 @@
       .content-container > div {
           width: 100%; /* 子容器寬度自適應 */
       }
-  }
-
-  @media (max-width: 600px) {
-    body {
-        font-size: 16px; /* 增加基本字體大小 */
+ 
+    .header-container {
+      flex-direction: column;
+      align-items: flex-start;
     }
-    .button, .subscribe-button {
-        padding: 15px 30px; /* 增加按鈕的點擊範圍 */
+  
+    #logo {
+      text-align: center;
+      margin: 10px 0;
+    }
+  
+    .header-right-container {
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+    }
+  
+    .welcome-message, .user-points {
+      text-align: left;
+      width: 100%;
+      margin: 5px 0;
+    }
+  
+    .checkin-button {
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .subscribe-button {
+      width: 89%;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .url-input-container, .upload-input-container form {
+      flex-direction: column; /* 在小螢幕上垂直排列 */
+    }
+  
+    .url-input-container input, .upload-input-container input,.url-input-container button ,.upload-input-container button {
+      width: 100%; /* 讓元素在垂直排列時佔滿寬度 */
+      margin: 5px; /* 增加按鈕和輸入框之間的間距 */
+    }
+    #youtubeUrl, #fileNameDisplay, #choosefile-button{
+      width: 80%;
+      margin: 5px;
+    }
+    #transcription, #summary {
+      width: 95%;
     }
 }
 
+/* "我的內容"選單按鈕樣式 */
+.menu-button {
+  display: none;
+  width: 100%;
+  padding: 10px 20px;
+  background-color: #fff;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.menu-button:hover {
+  background-color: #808080;
+}
+
+@media (max-width: 767px) {
+  .menu-button {
+    display: block;
+  }
+
+  .list-container {
+    display: none;
+    width: 100%;
+  }
+
+  .list-container.open {
+    display: block;
+  }
+}
   
     </style>
   </head>
@@ -375,10 +455,11 @@
   
 
     <div class="main-container">
-      <div id="transcriptionList" class="list-container">
+      <button class="menu-button" onclick="toggleMenu()">我的內容 (點擊以開合)</button>
+      <nav class="list-container" id="menu">
         <h3>我的內容</h3>
         <div id="tagsContainer"></div>
-      </div>
+      </nav>
 
       <div id="transcriptionContent" class="transcription-container">
         <div>
@@ -386,7 +467,7 @@
             <h1>YouTube內容擷取</h1>
             <div class="url-input-container">
               <input type="text" id="youtubeUrl" placeholder="請輸入YouTube網址" />
-              <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預估消耗</button>
+              <button id="estimateButton" onclick="fetchVideoInfo()" class="button-grey" disabled=true >預計消耗</button>
               <button id="fetchButton" onclick="fetchHighlights()" class="button-grey" disabled=true >音訊轉文字</button>
             </div>
             <div id="videoInfo" class="info">
@@ -831,6 +912,15 @@
         });
       }
 
+      // 開關"我的內容"菜單
+      function toggleMenu() {
+        var menu = document.getElementById("menu");
+        if (menu.classList.contains("open")) {
+          menu.classList.remove("open");
+        } else {
+          menu.classList.add("open");
+        }
+      }
     </script>
   </body>
 </html>
