@@ -1,0 +1,61 @@
+<!-- /professor-x/templates/payment_form.html -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor X 訂閱</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://payment.ecpay.com.tw/Scripts/2.0.1/ECPay.Payment.min.js"></script>
+</head>
+<body>
+    <form id="payment-form" action="/payment/process_payment" method="post">
+        <div id="card-number"></div>
+        <div id="card-expiration-date"></div>
+        <div id="card-ccv"></div>
+        <button type="submit">付款</button>
+    </form>
+
+    <script>
+        $(document).ready(function () {
+            const merchantID = "3413057";
+            const payment = new ECPay.Payment(merchantID, {
+                fields: {
+                    number: {
+                        id: 'card-number',
+                        style: { /* 自訂樣式 */ },
+                        placeholder: '卡號'
+                    },
+                    expirationDate: {
+                        id: 'card-expiration-date',
+                        style: { /* 自訂樣式 */ },
+                        placeholder: '有效期限 MM/YY'
+                    },
+                    ccv: {
+                        id: 'card-ccv',
+                        style: { /* 自訂樣式 */ },
+                        placeholder: '安全碼'
+                    }
+                }
+            });
+
+            $("#payment-form").on("submit", function (e) {
+                e.preventDefault();
+                payment.tokenize().then(function (result) {
+                    if (result.status === 'success') {
+                        $("<input>").attr({
+                            type: "hidden",
+                            name: "token",
+                            value: result.card.token
+                        }).appendTo("#payment-form");
+                        $("#payment-form").off("submit").submit();
+                    } else {
+                        alert("信用卡資訊有誤，請重新輸入");
+                    }
+                }).catch(function (err) {
+                    console.error(err);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

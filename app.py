@@ -25,7 +25,7 @@ import requests
 import smtplib # 用於發送電子郵件
 from email.mime.text import MIMEText # 用於創建電子郵件正文
 from email.mime.multipart import MIMEMultipart # 用於創建電子郵件
-
+from payment import payment_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -142,6 +142,7 @@ def index():
                 users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
             else:
                 # 如果使用者不存在，創建新使用者
+                consecutive_days = 0  # 設置新用戶的連續天數為0
                 users_db.insert_one(user_info_to_store)
 
             # 更新點數
@@ -527,7 +528,7 @@ def summarize_text(text):
                 {"role": "system", "content": "你是專業的重點整理專家，用淺顯易懂的語句有條理的把重點整理出來。根據文本的語言輸出，如果是中文則只使用繁體中文字，不要用簡體字。"},
                 {"role": "user", "content": text}
         ],
-        model="gpt-3.5-turbo",
+        model="gpt-4o", #"gpt-3.5-turbo",
     )
     print(f'summarize_text: {response.usage.prompt_tokens} prompt tokens used.')
     logging.info(f"{response.usage.prompt_tokens} prompt tokens used.")
@@ -886,7 +887,12 @@ def payment_cancelled():
 #         logging.error("Subscription creation failed.")
 #         return "訂閱創建失敗，請重試！", 400
 
+# ========== 綠界金流 以下 ==========
 
+# 註冊 Blueprint
+app.register_blueprint(payment_bp, url_prefix='/payment')
+
+# ========== 綠界金流 以上 ==========
 
 # ========== 付款相關 以上 ==========
 # ========== Email訂閱 以下 ==========
