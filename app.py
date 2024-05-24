@@ -898,8 +898,8 @@ def ecpayment():
         final_order_params = ecpay_payment_sdk.create_order(order_params)
 
         # 產生 HTML 的 form 格式
-        action_url = 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'  # 測試環境 記得.env也要改！！！
-        # action_url = 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5' # 正式環境 記得.env也要改！！！
+        # action_url = 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'  # 測試環境 記得.env也要改！！！
+        action_url = 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5' # 正式環境 記得.env也要改！！！
         html = ecpay_payment_sdk.gen_html_post_form(action_url, final_order_params)
         return html
     except Exception as error:
