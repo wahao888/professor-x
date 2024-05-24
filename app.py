@@ -108,7 +108,7 @@ def welcome():
 
 @app.route("/index")
 def index():
-    if not google.authorized:
+    if not google.authorized or 'google_id' not in session:
         return redirect(url_for("google.login"))
     
     try:
