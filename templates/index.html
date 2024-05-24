@@ -249,7 +249,7 @@
       
 
       /* 添加時間戳，隱藏原始的 checkbox */
-      #YT_addTimestamp, #Audio_addTimestamp {
+      #YT_addTimestamp, #Audio_addTimestamp, #sortContent {
         display: none;
       }
       /* 創建一個新的 label 样式 */
@@ -271,6 +271,13 @@
         transform: translateY(2px);
       }
       #Audio_addTimestamp:checked + .label-btn {
+        background-color: #388E3C;
+        border-color: #aaa;
+        color: white;
+        box-shadow: 0px 2px 0px #aaa;
+        transform: translateY(2px);
+      }
+      #sortContent:checked + .label-btn {
         background-color: #388E3C;
         border-color: #aaa;
         color: white;
@@ -303,6 +310,11 @@
       }
       .tag:hover {
           background-color: #d0d0d0; /* 鼠標懸停時的背景色 */
+      }
+      /* 選中標籤的樣式 */
+      .tag.selected {
+        background-color: #606060; /* 深灰色背景 */
+        color: white; /* 修改文字顏色以顯示在深色背景上 */
       }
 
       #videoInfo, #fileInfo{
@@ -499,20 +511,25 @@
             </div>
           </div>
 
-          <!--
+          
           <div class="checkbox-container">
             <div style="margin-right: 10px;">
-            <input type="checkbox" id="translate" name="translate" value="true">
-            <label for="translate">翻譯</label>
+              <!--
+              <label for="translate">翻譯</label>
+              <input type="checkbox" id="translate" name="translate" value="true">
+              -->
+              <input type="checkbox" id="sortContent" name="sortContent" value="true">
+              <label for="sortContent" class="label-btn">整理音訊內容</label>
             </div>
           </div>
-          -->
+
           <div id="progressBar" class="progressBar" style="display: none">處理中...請勿關閉或重整瀏覽器...</div>
         </div>
 
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
+            <input type="hidden" id="currentContentId" value="">
             <div id="transcription" style="white-space:pre-wrap;">轉錄內容將顯示在這裡</div>
           </div>
           <div id="summary-section" style="margin-left: 2%">
@@ -527,6 +544,21 @@
     
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        // 標籤點擊變色
+        var tagsContainer = document.getElementById("tagsContainer");
+        // 綁定點擊事件到標籤
+        tagsContainer.addEventListener("click", function(event) {
+            if (event.target.classList.contains("tag")) {
+                var tags = tagsContainer.querySelectorAll(".tag");
+                tags.forEach(function(tag) {
+                    tag.classList.remove("selected");
+                });
+                event.target.classList.add("selected");
+                displayVideoContent(event.target.getAttribute("url"));
+            }
+        });
+
+
         var youtubeUrlInput = document.getElementById("youtubeUrl");
         var estimateButton = document.getElementById("estimateButton");
       
@@ -554,6 +586,30 @@
           var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
           return pattern.test(url);
         }
+
+        var sortContentCheckbox = document.getElementById("sortContent");
+        sortContentCheckbox.addEventListener("change", function () {
+            if (this.checked) {
+                processContent('sort');
+            } else {
+                processContent('original');
+            }
+        });
+
+
+        // 從localStorage讀取數據
+        const storedTranscription = localStorage.getItem("transcription");
+        const storedSummary = localStorage.getItem("summary");
+
+        if (storedTranscription) {
+            document.getElementById("transcription").textContent = storedTranscription;
+        }
+        if (storedSummary) {
+            document.getElementById("summary").textContent = storedSummary;
+        }
+
+        // 從後端獲取用戶標籤
+        fetchUserContents();
 
       });
       
@@ -594,6 +650,10 @@
       button.textContent = "處理中..."; // 更改按鈕文字
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
+
+      // 重置“整理文章”的按鈕狀態
+      var sortContentCheckbox = document.getElementById("sortContent");
+      sortContentCheckbox.checked = false;
 
       const url = document.getElementById("youtubeUrl").value;
       fetch("/get_video_info", {
@@ -677,6 +737,10 @@
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
+      // 重置“整理文章”的按鈕狀態
+      var sortContentCheckbox = document.getElementById("sortContent");
+      sortContentCheckbox.checked = false;
+
       var formData = new FormData(document.getElementById('fileUploadForm'));
       fetch('/upload_file', {
           method: 'POST',
@@ -708,6 +772,10 @@
 
         const progressBar = document.getElementById("progressBar");
         progressBar.style.display = "block"; // 顯示進度條
+
+        // 重置“整理文章”的按鈕狀態
+        var sortContentCheckbox = document.getElementById("sortContent");
+        sortContentCheckbox.checked = false;
 
         const url = document.getElementById("youtubeUrl").value;
         const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
@@ -779,6 +847,10 @@
       const progressBar = document.getElementById("progressBar");
       progressBar.style.display = "block"; // 顯示進度條
   
+      // 重置“整理文章”的按鈕狀態
+      var sortContentCheckbox = document.getElementById("sortContent");
+      sortContentCheckbox.checked = false;
+
       const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
       const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
       fetch('/process_audio', {
@@ -831,8 +903,37 @@
       });
   }
   
+      // 整理文章
+      function processContent(action) {
+          var transcriptionElement = document.getElementById("transcription");
+          var originalContent = transcriptionElement.textContent;
+          var contentId = document.getElementById("currentContentId").value;
+          const progressBar = document.getElementById("progressBar");
+          progressBar.style.display = "block"; // 顯示進度條
 
-
+          fetch('/process_content', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ content: originalContent, action: action, id: contentId })
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  transcriptionElement.textContent = data.processed_content;
+                  // 更新localStorage中的內容
+                  localStorage.setItem("transcription", data.processed_content);
+              } else {
+                  alert('處理文章失敗');
+              }
+          })
+          .catch(error => console.error('Error:', error))
+          .finally(() => {
+            // 不管請求成功或失敗，最後都隱藏進度條
+            progressBar.style.display = "none";
+        });
+      }
 
 
       
@@ -902,6 +1003,15 @@
             // 如果找到了資料，則顯示在頁面上
             document.getElementById("transcription").textContent = data.transcription;
             document.getElementById("summary").textContent = data.summary;
+            // 保存當前內容的ID
+            document.getElementById("currentContentId").value = data.content_id;
+            console.log(data.content_id);
+            // 更新localStorage中的內容
+            localStorage.setItem("transcription", data.transcription);
+            localStorage.setItem("summary", data.summary);
+            // 重置“整理文章”的按鈕狀態
+            var sortContentCheckbox = document.getElementById("sortContent");
+            sortContentCheckbox.checked = false;
           } else {
             // 如果沒有找到對應的資料或發生錯誤
             console.error("Error:", data.message);

@@ -29,6 +29,7 @@ import uuid
 import datetime
 from datetime import datetime
 import importlib.util
+from bson import ObjectId # 用於處理MongoDB的ObjectID
 
 app = Flask(__name__)
 CORS(app)
@@ -79,6 +80,7 @@ content_db = db["contents"]
 google_db = db["google_login"]
 users_db = db['users']
 email_subscriptions_db = db['email_subscriptions']
+
 
 # 設置google login
 google_bp = make_google_blueprint(
@@ -690,6 +692,66 @@ def process_audio():
     })
 
 
+@app.route('/process_content', methods=['POST'])
+def process_content():
+    data = request.get_json()
+    content = data.get('content')
+    action = data.get('action')
+    content_id = data.get('id')
+
+    if not content:
+        return jsonify({'success': False, 'message': '內容不可為空'}), 400
+
+    # 如果動作是整理，調用GPT API
+    if action == 'sort':
+        try:
+            document = content_db.find_one({"_id": ObjectId(content_id)})
+            if document and "sorted_content" in document:
+                # 如果已經存在整理過的內容，直接返回
+                return jsonify({'success': True, 'processed_content': document['sorted_content'], 'document_id': str(document['_id'])})
+            else:
+                # 調用GPT API進行整理
+                response = client.chat.completions.create(
+                    messages=[
+                            {"role": "system", "content": "請不要修改文章內容，只要把文章內容加入標點符號，並且分成合理的段落，以方便閱讀。"},
+                            {"role": "user", "content": content}
+                    ],
+                    model="gpt-4o", 
+                )
+                processed_content = response.choices[0].message.content
+
+                # 保存到MongoDB
+                result = content_db.update_one(
+                    {"_id": ObjectId(content_id)},
+                    {"$set": {"sorted_content": processed_content}}
+                )
+                logging.debug(f"Update result: {result.modified_count} document(s) modified")
+
+                if result.modified_count == 1:
+                    return jsonify({'success': True, 'processed_content': processed_content, 'document_id': content_id})
+                else:
+                    return jsonify({'success': False, 'message': '無法更新資料庫'}), 500
+
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    # 如果動作是還原，從MongoDB中獲取原始內容
+    elif action == 'original':
+        try:
+            document = content_db.find_one({"_id": ObjectId(content_id)})
+            if document:
+                return jsonify({'success': True, 'processed_content': document['transcription']})
+            else:
+                return jsonify({'success': False, 'message': '未找到對應的原始內容'}), 404
+
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    else:
+        return jsonify({'success': False, 'message': '無效的動作'}), 400
+
+
+
 # ===================== 功能設定 以上 =====================
 # ===================== 匯出檔案 以下 =====================
 
@@ -717,6 +779,7 @@ def get_video_content():
     if content:
         return jsonify({
             "success": True,
+            "content_id": str(content["_id"]),
             "transcription": content["transcription"],
             "summary": content["summary"]
         })
