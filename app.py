@@ -905,10 +905,6 @@ ecpay_payment_sdk = ecpay_module.ECPayPaymentSdk(
     HashIV=os.getenv("ECPAY_HASHIV"),
 )
 
-@app.route('/payment_form')
-def payment_form():
-    return render_template('payment_form.html')
-
 @app.route('/ecpayment', methods=['POST'])
 def ecpayment():
     order_params = {
