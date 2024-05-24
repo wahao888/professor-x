@@ -190,11 +190,11 @@
           <h2 class="title">購買點數 100 點</h2>
           <div class="price">美金 1 元 (新台幣 30 元)</div>
           <p class="description">購買 100 點（100分鐘），沒有期限，隨時在我們的服務中使用。</p>
-          <form action="/pay/1" method="get">
-              <button class="btn" type="submit">Pay with PayPal (for International Customers)</button>
-          </form>
           <form id="payment-form" action="/ecpayment" method="post">
-            <button class="btn" type="submit">立即購買（台灣用戶）</button>
+            <button class="btn" type="submit">立即購買</button>
+          </form>
+          <form action="/pay/1" method="get">
+              <button class="btn" type="submit">透過PayPal購買 (僅提供非台灣Paypal帳戶)</button>
           </form>
         </div>
         
