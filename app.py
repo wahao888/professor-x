@@ -866,7 +866,7 @@ def ecpayment():
         'MerchantTradeDate': datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
         'PaymentType': 'aio',
         'TotalAmount': "30",
-        'TradeDesc': '訂單',
+        'TradeDesc': '購買Professor-x點數',
         'ItemName': '點數 100點',
         'ReturnURL': 'https://你的網站.com/return_url',
         'ChoosePayment': 'ALL',
@@ -908,6 +908,9 @@ def order_result():
         result = request.form.to_dict()
         app.logger.info(f'Order result: {result}')
 
+        rtn_msg = result.get('RtnMsg', 'No message')
+        rtn_code = result.get('RtnCode', 'No code')
+
         if 'RtnCode' in result and result['RtnCode'] == '1':  # 確認交易成功
             actual_paid_amount = int(result.get('TradeAmt') / 30) # 台幣換美金
             logging.info(f"Actual paid amount: {actual_paid_amount}")
@@ -915,7 +918,6 @@ def order_result():
             google_id = session.get('google_id')
             
             if google_id:
-                # 使用 MongoDB 的 $inc 更新操作來增加點數
                 result = users_db.update_one(
                     {"google_id": google_id},
                     {"$inc": {"points": points}}
@@ -934,7 +936,8 @@ def order_result():
             logging.error("Payment failed or was not completed.")
             flash('Payment failed. Please try again.', 'error')
 
-        return render_template('order_result.html')
+        return render_template('order_result.html', rtn_msg=rtn_msg, rtn_code=rtn_code)
+    
     except Exception as e:
         app.logger.error(f'Error processing order result: {str(e)}')
         return 'Error'

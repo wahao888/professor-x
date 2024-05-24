@@ -3,12 +3,34 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>訂單結果</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="5;url=/index">
+    <title>訂單結果</title>
+    <style>
+        .message {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            border-color: #c3e6cb;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            border-color: #f5c6cb;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
-    <h1>訂單結果</h1>
-    <p>您的訂單已處理完成，感謝您的購買！</p>
-    <p>五秒鐘後自動返回首頁...</p>
+    <div class="message {% if rtn_code == '1' %}success{% else %}error{% endif %}">
+        <p><strong>交易結果:</strong> {{ rtn_msg }}</p>
+        <p><strong>返回代碼:</strong> {{ rtn_code }}</p>
+        <p>五秒鐘後自動返回首頁...</p>
+    </div>
 </body>
 </html>
