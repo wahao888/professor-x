@@ -953,7 +953,7 @@ def ecpayment():
         return 'An exception happened: ' + str(error)
 
 
-@app.route('/order_result_url', methods=['POST'])
+@app.route('/order_result', methods=['POST'])
 def order_result():
     try:
         result = request.form.to_dict()
