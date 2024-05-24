@@ -191,8 +191,11 @@
           <div class="price">$ 1 美元</div>
           <p class="description">購買 100 點（100分鐘），沒有期限，隨時在我們的服務中使用。</p>
           <form action="/pay/1" method="get">
-              <button class="btn" type="submit">立即購買</button>
+              <button class="btn" type="submit">Pay with PayPal (for International Customers)</button>
           </form>
+          <form id="payment-form" action="/ecpayment" method="post">
+            <button class="btn" type="submit">立即購買（台灣用戶）</button>
+        </form>
         </div>
         
         <div class="footer">

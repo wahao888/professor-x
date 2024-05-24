@@ -25,7 +25,10 @@ import requests
 import smtplib # 用於發送電子郵件
 from email.mime.text import MIMEText # 用於創建電子郵件正文
 from email.mime.multipart import MIMEMultipart # 用於創建電子郵件
-from payment import payment_bp
+import uuid
+import datetime
+from datetime import datetime
+import importlib.util
 
 app = Flask(__name__)
 CORS(app)
@@ -38,7 +41,6 @@ logging.basicConfig(
     filename='myapp.log',  # 指定日誌文件的路徑
     filemode='a'  # 附加模式
 )
-
 
 # 封裝一個函數來決定從哪裡獲取秘密
 def get_secret(secret_name):
@@ -888,9 +890,78 @@ def payment_cancelled():
 #         return "訂閱創建失敗，請重試！", 400
 
 # ========== 綠界金流 以下 ==========
+# 動態載入 ECPay SDK
+spec = importlib.util.spec_from_file_location(
+    "ecpay_payment_sdk",
+    "ecpay_payment_sdk.py"
+)
+ecpay_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ecpay_module)
 
-# 註冊 Blueprint
-app.register_blueprint(payment_bp, url_prefix='/payment')
+# ECPay 支付 SDK 實體
+ecpay_payment_sdk = ecpay_module.ECPayPaymentSdk(
+    MerchantID=os.getenv("MerchantID"),
+    HashKey=os.getenv("ECPAY_HASHKEY"),
+    HashIV=os.getenv("ECPAY_HASHIV"),
+)
+
+@app.route('/payment_form')
+def payment_form():
+    return render_template('payment_form.html')
+
+@app.route('/ecpayment', methods=['POST'])
+def ecpayment():
+    order_params = {
+        'MerchantTradeNo': datetime.now().strftime("NO%Y%m%d%H%M%S"),
+        'StoreID': '',
+        'MerchantTradeDate': datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+        'PaymentType': 'aio',
+        'TotalAmount': "30",
+        'TradeDesc': '訂單測試',
+        'ItemName': '點數 100點',
+        'ReturnURL': 'https://你的網站.com/return_url',
+        'ChoosePayment': 'ALL',
+        'ClientBackURL': 'https://你的網站.com/client_back_url',
+        'ItemURL': 'https://你的網站.com/item_url',
+        'Remark': '交易備註',
+        'ChooseSubPayment': '',
+        'OrderResultURL': 'https://professor-x.lillian-ai.com/order_result',
+        'NeedExtraPaidInfo': 'Y',
+        'DeviceSource': '',
+        'IgnorePayment': '',
+        'PlatformID': '',
+        'InvoiceMark': 'N',
+        'CustomField1': '',
+        'CustomField2': '',
+        'CustomField3': '',
+        'CustomField4': '',
+        'EncryptType': 1,
+    }
+
+    logging.info(f"Order params: {order_params}")
+
+    try:
+        # 產生綠界訂單所需參數
+        final_order_params = ecpay_payment_sdk.create_order(order_params)
+
+        # 產生 HTML 的 form 格式
+        action_url = 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'  # 測試環境
+        # action_url = 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5' # 正式環境
+        html = ecpay_payment_sdk.gen_html_post_form(action_url, final_order_params)
+        return html
+    except Exception as error:
+        return 'An exception happened: ' + str(error)
+
+
+@app.route('/order_result')
+def order_result():
+    try:
+        result = request.form.to_dict()
+        app.logger.info(f'Order result: {result}')
+        return render_template('order_result.html')
+    except Exception as e:
+        app.logger.error(f'Error processing order result: {str(e)}')
+        return 'Error'
 
 # ========== 綠界金流 以上 ==========
 
@@ -952,9 +1023,7 @@ def subscribe():
 
 
 if __name__ == '__main__':
-    # app.run(ssl_context=('cert.pem', 'key.pem')) # 開發階段生成SSL
-    # app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-    app.run(host='0.0.0.0', port=8000) # 部署環境使用
+    app.run(host='0.0.0.0', port=8000, debug=True) # 部署環境使用
 
 
 # 開發階段不使用HTTPS，終端機輸入：
