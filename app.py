@@ -842,53 +842,6 @@ def payment_cancelled():
     flash("Payment cancelled by the user")  # Store the cancellation message
     return redirect(url_for('index'))  # Redirect to the homepage
 
-
-# # 訂閱制
-# # 設置Webhook監聽器
-# @app.route('/paypal/webhook', methods=['POST'])
-# def paypal_webhook():
-#     data = request.json
-#     if data['event_type'] == 'BILLING.SUBSCRIPTION.ACTIVATED':
-#         # 處理訂閱啟動事件
-#         print("訂閱已啟動")
-#     elif data['event_type'] == 'BILLING.SUBSCRIPTION.CANCELLED':
-#         # 處理訂閱取消事件
-#         print("訂閱已取消")
-#     return jsonify(success=True)
-
-
-# @app.route('/subscribe/<amount>')
-# def subscribe(amount):
-
-#     # 把amount存到session
-#     session['amount'] = amount
-#     logging.info(f"Subscribing to plan with amount: {amount}")
-
-#     # 從前端表單獲取數據
-#     start_time = datetime.now().isoformat()
-#     customer_email = session.get('email')
-#     given_name = session.get('given_name','')
-#     surname = session.get('family_name','')
-#     logging.info(f"start_time: {start_time}, Customer email: {customer_email}, given_name: {given_name} ,surname: {surname}")
-    
-#     # 產品和計劃
-#     access_token = paypal_integration.get_access_token(paypal_client_id, paypal_secret)
-#     product_id = paypal_integration.create_product(access_token)
-#     plan_id = paypal_integration.create_plan(access_token, product_id, amount)
-#     logging.info(f"Plan ID: {plan_id}")
-
-#     # 創建訂閱
-#     subscription = paypal_integration.create_subscription(plan_id, start_time, customer_email, given_name, surname)
-#     logging.info(f"Subscription created: {subscription}")
-#     if subscription:
-#         # 將用戶重定向到PayPal進行支付
-#         logging.info("Redirecting to PayPal for subscription.")
-#         return redirect(subscription.get('links')[1].get('href'))
-#     else:
-#         session.pop('amount', None)
-#         logging.error("Subscription creation failed.")
-#         return "訂閱創建失敗，請重試！", 400
-
 # ========== 綠界金流 以下 ==========
 # 動態載入 ECPay SDK
 spec = importlib.util.spec_from_file_location(
@@ -913,7 +866,7 @@ def ecpayment():
         'MerchantTradeDate': datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
         'PaymentType': 'aio',
         'TotalAmount': "30",
-        'TradeDesc': '訂單測試',
+        'TradeDesc': '訂單',
         'ItemName': '點數 100點',
         'ReturnURL': 'https://你的網站.com/return_url',
         'ChoosePayment': 'ALL',
@@ -941,8 +894,8 @@ def ecpayment():
         final_order_params = ecpay_payment_sdk.create_order(order_params)
 
         # 產生 HTML 的 form 格式
-        # action_url = 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'  # 測試環境
-        action_url = 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5' # 正式環境
+        # action_url = 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'  # 測試環境 記得.env也要改！！！
+        action_url = 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5' # 正式環境 記得.env也要改！！！
         html = ecpay_payment_sdk.gen_html_post_form(action_url, final_order_params)
         return html
     except Exception as error:
@@ -954,10 +907,38 @@ def order_result():
     try:
         result = request.form.to_dict()
         app.logger.info(f'Order result: {result}')
+
+        if 'RtnCode' in result and result['RtnCode'] == '1':  # 確認交易成功
+            actual_paid_amount = int(result.get('TradeAmt') / 30) # 台幣換美金
+            logging.info(f"Actual paid amount: {actual_paid_amount}")
+            points = calculate_points_based_on_amount(actual_paid_amount)  # 計算應增加的點數
+            google_id = session.get('google_id')
+            
+            if google_id:
+                # 使用 MongoDB 的 $inc 更新操作來增加點數
+                result = users_db.update_one(
+                    {"google_id": google_id},
+                    {"$inc": {"points": points}}
+                )
+                
+                if result.modified_count > 0:
+                    logging.info(f"User {google_id} received {points} points.")
+                    flash(f'Payment successful! You now have {points} additional points.', 'success')
+                else:
+                    logging.error("Failed to update user points.")
+                    flash('Error updating your points. Please contact support.', 'error')
+            else:
+                logging.error("User not logged in.")
+                flash('You need to log in to receive points.', 'error')
+        else:
+            logging.error("Payment failed or was not completed.")
+            flash('Payment failed. Please try again.', 'error')
+
         return render_template('order_result.html')
     except Exception as e:
         app.logger.error(f'Error processing order result: {str(e)}')
         return 'Error'
+
 
 # ========== 綠界金流 以上 ==========
 
