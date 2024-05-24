@@ -912,9 +912,10 @@ def order_result():
         rtn_code = result.get('RtnCode', 'No code')
 
         if 'RtnCode' in result and result['RtnCode'] == '1':  # 確認交易成功
-            actual_paid_amount = int(result.get('TradeAmt') / 30) # 台幣換美金
-            logging.info(f"Actual paid amount: {actual_paid_amount}")
-            points = calculate_points_based_on_amount(actual_paid_amount)  # 計算應增加的點數
+            actual_paid_amount_twd = float(result.get('TradeAmt'))
+            actual_paid_amount_usd = int(actual_paid_amount_twd / 30)   # 台幣換美金
+            logging.info(f"Actual paid amount: {actual_paid_amount_usd}")
+            points = calculate_points_based_on_amount(actual_paid_amount_usd)  # 計算應增加的點數
             google_id = session.get('google_id')
             
             if google_id:
