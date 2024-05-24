@@ -915,8 +915,9 @@ def order_result():
             actual_paid_amount_twd = float(result.get('TradeAmt'))
             actual_paid_amount_usd = int(actual_paid_amount_twd / 30)   # 台幣換美金
             logging.info(f"Actual paid amount: {actual_paid_amount_usd}")
-            points = calculate_points_based_on_amount(actual_paid_amount_usd)  # 計算應增加的點數
+            points = calculate_points_based_on_amount(str(actual_paid_amount_usd))  # 計算應增加的點數
             google_id = session.get('google_id')
+            logging.info(f"Google ID: {google_id}")
             
             if google_id:
                 result = users_db.update_one(
