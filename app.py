@@ -110,71 +110,72 @@ def welcome():
 def index():
     if not google.authorized:
         return redirect(url_for("google.login"))
-    try:
-        resp = google.get("/oauth2/v1/userinfo")
-        if resp.ok:
-            userinfo = resp.json()
-            print("userinfo:",userinfo)
+    if 'google_id' not in session:
+        try:
+            resp = google.get("/oauth2/v1/userinfo")
+            if resp.ok:
+                userinfo = resp.json()
+                print("userinfo:",userinfo)
+                logging.info(f"User info: {userinfo}")
+                google_id = userinfo.get("id")
+                name = userinfo.get("name")
+                email = userinfo.get("email") 
+                given_name = userinfo.get("given_name")
+                family_name = userinfo.get("family_name")
+                
+                
+                # 構建要存儲的用戶信息字典
+                user_info_to_store = {
+                    "google_id": google_id,  # Google ID
+                    "name": name,  # 使用者名稱
+                    "email": email,  # 電子郵件地址
+                    "given_name": given_name,  # 名字
+                    "family_name": family_name,  # 姓氏
+                    "last_bonus_date": None,
+                    "points": 0,
+                }
 
-            google_id = userinfo.get("id")
-            name = userinfo.get("name")
-            email = userinfo.get("email") 
-            given_name = userinfo.get("given_name")
-            family_name = userinfo.get("family_name")
-            
-            
-            # 構建要存儲的用戶信息字典
-            user_info_to_store = {
-                "google_id": google_id,  # Google ID
-                "name": name,  # 使用者名稱
-                "email": email,  # 電子郵件地址
-                "given_name": given_name,  # 名字
-                "family_name": family_name,  # 姓氏
-                "last_bonus_date": None,
-                "points": 0,
-            }
+                # 檢查數據庫是否已有該使用者
+                existing_user = users_db.find_one({"google_id": google_id})
+                if existing_user:
+                    # 如果使用者已存在
+                    consecutive_days = existing_user.get("consecutive_days", 0)
+                    user_info_to_store["last_bonus_date"] = existing_user.get("last_bonus_date")
+                    user_info_to_store["points"] = existing_user.get("points", 0)
+                    users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
+                else:
+                    # 如果使用者不存在，創建新使用者
+                    consecutive_days = 0  # 設置新用戶的連續天數為0
+                    users_db.insert_one(user_info_to_store)
 
-            # 檢查數據庫是否已有該使用者
-            existing_user = users_db.find_one({"google_id": google_id})
-            if existing_user:
-                # 如果使用者已存在
-                consecutive_days = existing_user.get("consecutive_days", 0)
-                user_info_to_store["last_bonus_date"] = existing_user.get("last_bonus_date")
-                user_info_to_store["points"] = existing_user.get("points", 0)
-                users_db.update_one({"google_id": google_id}, {"$set": user_info_to_store})
+                # 更新點數
+                user_points = user_info_to_store["points"]
+                last_bonus_date = user_info_to_store.get("last_bonus_date")
+                current_date = datetime.now().date()
+
+                # 檢查是否應該添加獎勵點數
+                if last_bonus_date is None or current_date > last_bonus_date.date() + timedelta(days=30):
+                    user_points += 100
+                    users_db.update_one({"google_id": google_id}, {"$set": {
+                        "points": user_points,
+                        "last_bonus_date": datetime.combine(current_date, datetime.min.time())
+                    }})
+
+                session['google_id'] = google_id
+                session['name'] = name
+                session['email'] = email
+                session['given_name'] = given_name
+                session['family_name'] = family_name
+                session['user_points'] = user_points
+                # print("session資訊：",session)
+                logging.info(f"User {name} logged in. Points: {user_points}")
+                print(f"User {name} logged in. Points: {user_points} Consecutive days: {consecutive_days}")
+
+
             else:
-                # 如果使用者不存在，創建新使用者
-                consecutive_days = 0  # 設置新用戶的連續天數為0
-                users_db.insert_one(user_info_to_store)
-
-            # 更新點數
-            user_points = user_info_to_store["points"]
-            last_bonus_date = user_info_to_store.get("last_bonus_date")
-            current_date = datetime.now().date()
-
-            # 檢查是否應該添加獎勵點數
-            if last_bonus_date is None or current_date > last_bonus_date.date() + timedelta(days=30):
-                user_points += 100
-                users_db.update_one({"google_id": google_id}, {"$set": {
-                    "points": user_points,
-                    "last_bonus_date": datetime.combine(current_date, datetime.min.time())
-                }})
-
-            session['google_id'] = google_id
-            session['name'] = name
-            session['email'] = email
-            session['given_name'] = given_name
-            session['family_name'] = family_name
-            session['user_points'] = user_points
-            # print("session資訊：",session)
-            logging.info(f"User {name} logged in. Points: {user_points}")
-            print(f"User {name} logged in. Points: {user_points} Consecutive days: {consecutive_days}")
-
-
-        else:
-            return "無法獲取使用者資訊", 500
-    except TokenExpiredError:
-        return redirect(url_for("google.login"))  # 引導用戶重新登入
+                return "無法獲取使用者資訊", 500
+        except TokenExpiredError:
+            return redirect(url_for("google.login"))  # 引導用戶重新登入
     
     return render_template('index.html', user_name=name, user_points=user_points, consecutive_days=consecutive_days)
 
@@ -762,6 +763,9 @@ def get_contents_by_category(category_id):
 # 支付頁面
 @app.route('/payment')
 def payment():
+    if 'google_id' not in session:
+        return redirect(url_for('index'))  # 將用戶重定向到index，確保重新獲取google_id
+
     user_points = session.get('user_points', 0)  # 如果沒有找到，預設為 0
     name = session.get('name')
     logging.info(f"User {name} accessing payment page.")
