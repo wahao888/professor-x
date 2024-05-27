@@ -160,10 +160,22 @@ def index():
             # 檢查是否應該添加獎勵點數
             if last_bonus_date is None or current_date > last_bonus_date.date() + timedelta(days=30):
                 user_points += 100
-                users_db.update_one({"google_id": google_id}, {"$set": {
-                    "points": user_points,
-                    "last_bonus_date": datetime.combine(current_date, datetime.min.time())
-                }})
+                users_db.update_one(
+                    {"google_id": google_id},
+                    {
+                        "$set": {
+                            "points": user_points,
+                            "last_bonus_date": datetime.combine(current_date, datetime.min.time())
+                        },
+                        "$push": {
+                            "points_history": {
+                                "points": 100,
+                                "reason": "每月獎勵點數",
+                                "date": datetime.utcnow()
+                            }
+                        }
+                    }
+                )
 
             session['google_id'] = google_id
             session['name'] = name
@@ -261,13 +273,23 @@ def checkin():
 
     checkin_dates.append(today_datetime)
 
-    users_db.update_one({"google_id": google_id}, {
-        "$set": {
-            "points": points,
-            "checkin_dates": checkin_dates,
-            "consecutive_days": consecutive_days
+    users_db.update_one(
+        {"google_id": google_id}, 
+        {
+            "$set": {
+                "points": points,
+                "checkin_dates": checkin_dates,
+                "consecutive_days": consecutive_days
+            },
+            "$push": {
+                "points_history": {
+                    "points": points_to_add,
+                    "reason": f"每日簽到 {'連續簽到7日獎勵' if consecutive_days == 7 else ''}".strip(),
+                    "date": datetime.utcnow()
+                }
+            }
         }
-    })
+    )
 
     session['user_points'] = points
     print(f"用戶 {google_id} 簽到成功，點數：{points}，已經連續簽到 {consecutive_days} 天")
@@ -362,7 +384,13 @@ def deduct_user_points(user_id, points_to_deduct):
         points_to_deduct = float(points_to_deduct)
         if user_points >= points_to_deduct:
             new_points = round(user_points - points_to_deduct, 2)
-            result = users_db.update_one({"google_id": user_id}, {"$set": {"points": new_points}})
+            result = users_db.update_one(
+                {"google_id": user_id},
+                {
+                    "$set": {"points": new_points},
+                    "$push": {"points_history": {"points": -points_to_deduct, "reason": "點數扣除", "date": datetime.utcnow()}}
+                }
+            )
             if result.modified_count == 1:
                 session['user_points'] = new_points  # 確保只有在數據庫更新成功時才更新會話
                 logging.info(f"User {user_id} deducted {points_to_deduct} points. Remaining points: {new_points}")
@@ -922,7 +950,10 @@ def payment_completed():
             # 使用 MongoDB 的 $inc 更新操作來增加點數
             result = users_db.update_one(
                 {"google_id": google_id},
-                {"$inc": {"points": points}}
+                {
+                    "$inc": {"points": points},
+                    "$push": {"points_history": {"points": points, "reason": "Paypal支付完成", "date": datetime.utcnow()}}
+                }
             )
             
             if result.modified_count > 0:
@@ -1027,7 +1058,10 @@ def order_result():
             if google_id:
                 result = users_db.update_one(
                     {"google_id": google_id},
-                    {"$inc": {"points": points}}
+                    {
+                        "$inc": {"points": points},
+                        "$push": {"points_history": {"points": points, "reason": "綠界支付完成", "date": datetime.utcnow()}}
+                    }
                 )
                 
                 if result.modified_count > 0:
