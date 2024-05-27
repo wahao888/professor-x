@@ -30,6 +30,8 @@ import datetime
 from datetime import datetime
 import importlib.util
 from bson import ObjectId # 用於處理MongoDB的ObjectID
+import string # 用於生成隨機字符串 generate_safe_filename()
+import random # 用於生成隨機字符串 generate_safe_filename()
 
 app = Flask(__name__)
 CORS(app)
@@ -308,12 +310,30 @@ def get_video_info():
         logging.error(f"Error getting video info: {str(e)}")
         return jsonify({"success": False, "message": "請輸入正確的Youtube網址"}), 500
 
+
+def generate_safe_filename(filename):
+    # 過濾掉不安全字符，只保留字母、數字、下劃線和破折號
+    safe_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    safe_filename = "".join(c for c in filename if c in safe_chars)
+    
+    # 限制檔案名的長度
+    max_length = 255
+    safe_filename = safe_filename[:max_length]
+    
+    # 使用隨機字串來生成唯一的檔案名
+    random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    name, ext = os.path.splitext(safe_filename)
+    safe_filename = f"{random_str}_{name}{ext}"
+    
+    return safe_filename
+
+
 # 上傳音訊檔案並取得資訊
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     file = request.files['audioFile']
     logging.info(f"File received: {file}")
-    filename = secure_filename(file.filename)
+    filename = file.filename #secure_filename(file.filename)
     download_dir = "./download"
     file_path = os.path.join(download_dir, filename)
     logging.info(f"Uploading file: {filename}")
@@ -371,14 +391,6 @@ def deduct_user_points(user_id, points_to_deduct):
 #         return "Upload successful"
 #     except Exception as e:
 #         return f"Error during upload to GCS: {str(e)}"
-
-# 處理檔案名稱
-def sanitize_filename(filename):
-    # 將空格替換為下劃線
-    filename = filename.replace(" ", "_")
-    # 移除或替換特殊字符，只保留字母、數字、下劃線和點
-    filename = re.sub(r'[^a-zA-Z0-9_\.-]', '', filename)
-    return filename
 
 
 # 下載 YouTube 音訊
@@ -533,7 +545,7 @@ def summarize_text(text):
                 {"role": "system", "content": "你是專業的重點整理專家，用淺顯易懂的語句有條理的把重點整理出來。根據文本的語言輸出，如果是中文則只使用繁體中文字，不要用簡體字。"},
                 {"role": "user", "content": text}
         ],
-        model="gpt-4o", #"gpt-3.5-turbo",
+        model="gpt-4o",
     )
     print(f'summarize_text: {response.usage.prompt_tokens} prompt tokens used.')
     logging.info(f"{response.usage.prompt_tokens} prompt tokens used.")
@@ -589,20 +601,24 @@ def process_video():
     google_id = session.get('google_id') # 獲取使用者的Google ID
     file_name = session.get('file_name')  # 從會話中獲取檔案名稱
 
+    # 整理音訊內容成好閱讀的格式
+    sorted_content = sort_content(transcription)
+
     content_data = {
         "google_id": google_id,
         "file_name": file_name,
         "url": youtube_url,
         "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
+        "sorted_content": sorted_content,
         "summary": summary,
         "shared": share,
         "timestamp": datetime.now()
     }
     try:
         content_db.insert_one(content_data)
-        print("Content saved successfully.")
-        logging.info("Content saved successfully.")
+        print("=========== Content saved successfully. ===========")
+        logging.info("=========== Content saved successfully. ===========")
 
         # 數據保存成功後扣除點數
         success, message = deduct_user_points(google_id, estimated_tokens)
@@ -617,6 +633,7 @@ def process_video():
     return jsonify({
     'success': True,
     'transcription': transcription,
+    "sorted_content": sorted_content,
     'summary': summary,
     'file_name': file_name,
     'new_points': session.get('user_points', 0)  # 返回更新後的點數  
@@ -651,22 +668,25 @@ def process_audio():
     # category_id = data.get('categoryId') # 分類
     share = data.get('share', False)  # 預設不分享
     google_id = session.get('google_id') # 獲取使用者的Google ID
-    file_name = segment_files[0].split("/")[-1][:-3]  # 從路徑中提取檔案名稱
+
+    # 整理音訊內容成好閱讀的格式
+    sorted_content = sort_content(transcription)
 
     content_data = {
         "google_id": google_id,
-        "file_name": file_name,
-        "url": "user_upload",
+        "file_name": filename,
+        "url": filename,
         "category_id": "category_id", # 暫時沒有分類ID
         "transcription": transcription,
+        "sorted_content": sorted_content,
         "summary": summary,
         "shared": share,
         "timestamp": datetime.now()
     }
     try:
         content_db.insert_one(content_data)
-        print("Content saved successfully.")
-        logging.info("Content saved successfully.")
+        print("========== Content saved successfully. ==========")
+        logging.info("========== Content saved successfully. ==========")
 
         # 數據保存成功後扣除點數
         success, message = deduct_user_points(google_id, estimated_cost)
@@ -686,69 +706,86 @@ def process_audio():
     return jsonify({
     'success': True,
     'transcription': transcription,
+    "sorted_content": sorted_content,
     'summary': summary,
-    'file_name': file_name,
+    'file_name': filename,
     'new_points': session.get('user_points', 0)  # 返回更新後的點數   
     })
 
 
-@app.route('/process_content', methods=['POST'])
-def process_content():
-    data = request.get_json()
-    content = data.get('content')
-    action = data.get('action')
-    content_id = data.get('id')
+# 整理音訊內容成好閱讀的格式
+def sort_content(content):
+    # 調用GPT API進行整理
+    response = client.chat.completions.create(
+        messages=[
+                {"role": "system", "content": "請不要修改文章內容，只要把文章內容加入標點符號，並且分成合理的段落，以方便閱讀。"},
+                {"role": "user", "content": content}
+        ],
+        model="gpt-4o", 
+    )
+    sorted_content = response.choices[0].message.content
+    logging.info(f"Content sorted successfully. {response.usage.prompt_tokens} prompt tokens used.")
+    print(f'Content sorted successfully. {response.usage.prompt_tokens} prompt tokens used.')
+    return sorted_content
 
-    if not content:
-        return jsonify({'success': False, 'message': '內容不可為空'}), 400
 
-    # 如果動作是整理，調用GPT API
-    if action == 'sort':
-        try:
-            document = content_db.find_one({"_id": ObjectId(content_id)})
-            if document and "sorted_content" in document:
-                # 如果已經存在整理過的內容，直接返回
-                return jsonify({'success': True, 'processed_content': document['sorted_content'], 'document_id': str(document['_id'])})
-            else:
-                # 調用GPT API進行整理
-                response = client.chat.completions.create(
-                    messages=[
-                            {"role": "system", "content": "請不要修改文章內容，只要把文章內容加入標點符號，並且分成合理的段落，以方便閱讀。"},
-                            {"role": "user", "content": content}
-                    ],
-                    model="gpt-4o", 
-                )
-                processed_content = response.choices[0].message.content
+# @app.route('/process_content', methods=['POST'])
+# def process_content():
+#     data = request.get_json()
+#     content = data.get('content')
+#     action = data.get('action')
+#     content_id = data.get('id')
 
-                # 保存到MongoDB
-                result = content_db.update_one(
-                    {"_id": ObjectId(content_id)},
-                    {"$set": {"sorted_content": processed_content}}
-                )
-                logging.debug(f"Update result: {result.modified_count} document(s) modified")
+#     if not content:
+#         return jsonify({'success': False, 'message': '內容不可為空'}), 400
 
-                if result.modified_count == 1:
-                    return jsonify({'success': True, 'processed_content': processed_content, 'document_id': content_id})
-                else:
-                    return jsonify({'success': False, 'message': '無法更新資料庫'}), 500
+#     # 如果動作是整理，調用GPT API
+#     if action == 'sort':
+#         try:
+#             document = content_db.find_one({"_id": ObjectId(content_id)})
+#             if document and "sorted_content" in document:
+#                 # 如果已經存在整理過的內容，直接返回
+#                 return jsonify({'success': True, 'processed_content': document['sorted_content'], 'document_id': str(document['_id'])})
+#             else:
+#                 # 調用GPT API進行整理
+#                 response = client.chat.completions.create(
+#                     messages=[
+#                             {"role": "system", "content": "請不要修改文章內容，只要把文章內容加入標點符號，並且分成合理的段落，以方便閱讀。"},
+#                             {"role": "user", "content": content}
+#                     ],
+#                     model="gpt-4o", 
+#                 )
+#                 processed_content = response.choices[0].message.content
 
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
+#                 # 保存到MongoDB
+#                 result = content_db.update_one(
+#                     {"_id": ObjectId(content_id)},
+#                     {"$set": {"sorted_content": processed_content}}
+#                 )
+#                 logging.debug(f"Update result: {result.modified_count} document(s) modified")
 
-    # 如果動作是還原，從MongoDB中獲取原始內容
-    elif action == 'original':
-        try:
-            document = content_db.find_one({"_id": ObjectId(content_id)})
-            if document:
-                return jsonify({'success': True, 'processed_content': document['transcription']})
-            else:
-                return jsonify({'success': False, 'message': '未找到對應的原始內容'}), 404
+#                 if result.modified_count == 1:
+#                     return jsonify({'success': True, 'processed_content': processed_content, 'document_id': content_id})
+#                 else:
+#                     return jsonify({'success': False, 'message': '無法更新資料庫'}), 500
 
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
+#         except Exception as e:
+#             return jsonify({'success': False, 'message': str(e)}), 500
 
-    else:
-        return jsonify({'success': False, 'message': '無效的動作'}), 400
+#     # 如果動作是還原，從MongoDB中獲取原始內容
+#     elif action == 'original':
+#         try:
+#             document = content_db.find_one({"_id": ObjectId(content_id)})
+#             if document:
+#                 return jsonify({'success': True, 'processed_content': document['transcription']})
+#             else:
+#                 return jsonify({'success': False, 'message': '未找到對應的原始內容'}), 404
+
+#         except Exception as e:
+#             return jsonify({'success': False, 'message': str(e)}), 500
+
+#     else:
+#         return jsonify({'success': False, 'message': '無效的動作'}), 400
 
 
 
@@ -781,6 +818,7 @@ def get_video_content():
             "success": True,
             "content_id": str(content["_id"]),
             "transcription": content["transcription"],
+            "sorted_content": content.get("sorted_content", ""),
             "summary": content["summary"]
         })
     else:

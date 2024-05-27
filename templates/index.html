@@ -515,11 +515,11 @@
           <div class="checkbox-container">
             <div style="margin-right: 10px;">
               <!--
-              <label for="translate">翻譯</label>
+              <label for="translate">翻譯成繁體中文</label>
               <input type="checkbox" id="translate" name="translate" value="true">
               -->
-              <input type="checkbox" id="sortContent" name="sortContent" value="true">
-              <label for="sortContent" class="label-btn">整理音訊內容</label>
+              <input type="checkbox" id="sortContent" name="sortContent" value="true" onchange="toggleReadingMode()">
+              <label for="sortContent" class="label-btn">好閱讀模式</label>
             </div>
           </div>
 
@@ -586,31 +586,6 @@
           var pattern = /^(https?:\/\/)?(www\.youtube\.com|youtu\.be)\/.+$/;
           return pattern.test(url);
         }
-
-        var sortContentCheckbox = document.getElementById("sortContent");
-        sortContentCheckbox.addEventListener("change", function () {
-            if (this.checked) {
-                processContent('sort');
-            } else {
-                processContent('original');
-            }
-        });
-
-
-        // 從localStorage讀取數據
-        const storedTranscription = localStorage.getItem("transcription");
-        const storedSummary = localStorage.getItem("summary");
-
-        if (storedTranscription) {
-            document.getElementById("transcription").textContent = storedTranscription;
-        }
-        if (storedSummary) {
-            document.getElementById("summary").textContent = storedSummary;
-        }
-
-        // 從後端獲取用戶標籤
-        fetchUserContents();
-
       });
       
 
@@ -790,8 +765,7 @@
           .then((response) => response.json())
           .then((data) => {
             if (data.success) {
-            document.getElementById("transcription").textContent =
-              data.transcription;
+            document.getElementById("transcription").textContent = data.transcription;
             document.getElementById("summary").textContent = data.summary;
             console.log(data.message);
             progressBar.style.display = "none"; // 隱藏進度條
@@ -817,6 +791,7 @@
 
             // 將結果存儲到localStorage
             localStorage.setItem("transcription", data.transcription);
+            localStorage.setItem("sorted_content", data.sorted_content);
             localStorage.setItem("summary", data.summary);
 
           } else {
@@ -852,6 +827,7 @@
       sortContentCheckbox.checked = false;
 
       const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
+      console.log("fileName: ",fileName);
       const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
       fetch('/process_audio', {
           method: 'POST',
@@ -885,6 +861,7 @@
   
               // 將結果存儲到localStorage
               localStorage.setItem("transcription", data.transcription);
+              localStorage.setItem("sorted_content", data.sorted_content);
               localStorage.setItem("summary", data.summary);
           } else {
               alert(data.message);
@@ -903,56 +880,41 @@
       });
   }
   
-      // 整理文章
-      function processContent(action) {
-          var transcriptionElement = document.getElementById("transcription");
-          var originalContent = transcriptionElement.textContent;
-          var contentId = document.getElementById("currentContentId").value;
-          const progressBar = document.getElementById("progressBar");
-          progressBar.style.display = "block"; // 顯示進度條
-
-          fetch('/process_content', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ content: originalContent, action: action, id: contentId })
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  transcriptionElement.textContent = data.processed_content;
-                  // 更新localStorage中的內容
-                  localStorage.setItem("transcription", data.processed_content);
-              } else {
-                  alert('處理文章失敗');
-              }
-          })
-          .catch(error => console.error('Error:', error))
-          .finally(() => {
-            // 不管請求成功或失敗，最後都隱藏進度條
-            progressBar.style.display = "none";
-        });
+      // 好閱讀模式
+      function toggleReadingMode() {
+        var checkbox = document.getElementById('sortContent');
+        var transcriptionDiv = document.getElementById('transcription');
+      
+        if (checkbox.checked) {
+          // 如果勾選了「好閱讀模式」，顯示 sorted_content
+          transcriptionDiv.textContent = localStorage.getItem('sorted_content') || "轉錄內容將顯示在這裡";
+        } else {
+          // 如果取消勾選，顯示 transcription
+          transcriptionDiv.textContent = localStorage.getItem('transcription') || "轉錄內容將顯示在這裡";
+        }
       }
-
 
       
       // 頁面加載
       document.addEventListener("DOMContentLoaded", function () {
-
         // 從後端獲取用戶標籤
         fetchUserContents();
-
         // 從localStorage讀取數據
         const storedTranscription = localStorage.getItem("transcription");
-        const storedSummary = localStorage.getItem("summary");
-
+        const summary = localStorage.getItem("summary");
         if (storedTranscription) {
           document.getElementById("transcription").textContent =
             storedTranscription;
         }
-        if (storedSummary) {
-          document.getElementById("summary").textContent = storedSummary;
+        if (summary) {
+          document.getElementById("summary").textContent = summary;
+        }
+        // 好閱讀模式
+        var sortedContentCheckbox = document.getElementById('sortContent');
+        sortedContentCheckbox.addEventListener('change', toggleReadingMode);
+        // 如果頁面加載時「好閱讀模式」已經勾選，更新內容顯示
+        if (sortedContentCheckbox.checked) {
+          toggleReadingMode();
         }
       });
 
@@ -974,7 +936,7 @@
                     newTag.setAttribute("url", content.url);
                     newTag.className = "tag";
                     newTag.onclick = function() {
-                        displayVideoContent(this.getAttribute("url"));
+                      displayVideoContent(this.getAttribute("url"));
                     };
                     tagsContainer.appendChild(newTag);
                 });
@@ -1000,14 +962,30 @@
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            // 如果找到了資料，則顯示在頁面上
-            document.getElementById("transcription").textContent = data.transcription;
-            document.getElementById("summary").textContent = data.summary;
-            // 保存當前內容的ID
-            document.getElementById("currentContentId").value = data.content_id;
-            console.log(data.content_id);
+            // 確保 DOM 元素存在
+            const transcriptionElement = document.getElementById("transcription");
+            const summaryElement = document.getElementById("summary");
+            const contentIdElement = document.getElementById("currentContentId");
+
+            if (transcriptionElement) {
+                transcriptionElement.textContent = data.transcription;
+            } else {
+                console.error('Element with ID "transcription" not found.');
+            }
+            if (summaryElement) {
+                summaryElement.textContent = data.summary;
+            } else {
+                console.error('Element with ID "summary" not found.');
+            }
+            if (contentIdElement) {
+                contentIdElement.value = data.content_id;
+            } else {
+                console.error('Element with ID "currentContentId" not found.');
+            }
+            
             // 更新localStorage中的內容
             localStorage.setItem("transcription", data.transcription);
+            localStorage.setItem("sorted_content", data.sorted_content);
             localStorage.setItem("summary", data.summary);
             // 重置“整理文章”的按鈕狀態
             var sortContentCheckbox = document.getElementById("sortContent");
