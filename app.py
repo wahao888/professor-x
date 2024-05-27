@@ -355,7 +355,7 @@ def generate_safe_filename(filename):
 def upload_file():
     file = request.files['audioFile']
     logging.info(f"File received: {file}")
-    filename = file.filename #secure_filename(file.filename)
+    filename = file.filename[:50] #secure_filename(file.filename)
     download_dir = "./download"
     file_path = os.path.join(download_dir, filename)
     logging.info(f"Uploading file: {filename}")
@@ -451,7 +451,7 @@ def download_youtube_audio_as_mp3(youtube_url):
                 info = ydl.extract_info(youtube_url, download=False)
             logging.debug("Video info extracted.")
 
-            video_title = info.get('title', 'DownloadedAudio')
+            video_title = info.get('title', 'DownloadedAudio')[:50]  # 限制檔案名稱長度
             current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{video_title}_{current_time}.mp3"
             ydl_opts['outtmpl'] = f"./download/{filename[:-4]}"  # 更新選項中的檔案名模板，包含副檔名
@@ -483,7 +483,6 @@ def segment_audio(filename, segment_length_minutes):
 
     try:
         audio = AudioSegment.from_file(full_path)
-        
         segments = []
         start = 0
         part = 1
@@ -615,7 +614,6 @@ def process_video():
 
     # 語音轉文字
     segment_files = download_youtube_audio_as_mp3(youtube_url) # 返回分段音訊檔案的路徑列表
-    print("segment_files:", segment_files)
     transcription = transcribe_audio(segment_files, add_timestamp)
     summary = summarize_text(transcription)
 
