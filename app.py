@@ -265,12 +265,14 @@ def checkin():
         consecutive_days = 1
 
     points = user.get("points", 0)
-    points += 5
+    points_to_add = 5
 
     # 連續簽到7日獎勵50點
     if consecutive_days == 7:
-        points += 50
+        points_to_add += 50
 
+    points += points_to_add
+    
     checkin_dates.append(today_datetime)
 
     users_db.update_one(
