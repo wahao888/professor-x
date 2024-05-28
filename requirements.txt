@@ -1,23 +1,25 @@
-bootstrap4==0.1.0
-imageio==2.33.0
-imageio-ffmpeg==0.4.9
-openai==1.16.2
-oauthlib==3.2.0
+bootstrap4==0.1.0 #網頁
+imageio==2.33.0 #影片處理
+imageio-ffmpeg==0.4.9 #影片處理
+openai==1.16.2 #openai
+oauthlib==3.2.0 #登入
 
-Flask==3.0.3
-Flask-Cors==4.0.0
-Flask-Dance==7.1.0
-Flask-PyMongo==2.3.0
-Flask-SocketIO==5.3.5
-yt-dlp==2024.3.10
-pydub==0.25.1
-pymongo==4.6.3
-gunicorn==21.2.0
-python-dotenv==1.0.0
-certifi==2024.2.2
+Flask==3.0.3 #伺服器
+Flask-Cors==4.0.0 #跨域
+Flask-Dance==7.1.0 #登入
+Flask-PyMongo==2.3.0 #資料庫
+Flask-SocketIO==5.3.6 #背景執行
+python-socketio==5.11.2 #背景執行
+simple-websocket==1.0.0 #背景執行
+yt-dlp==2024.3.10 #youtube下載
+pydub==0.25.1 #音檔處理
+pymongo==4.6.3 #資料庫
+gunicorn==21.2.0 #伺服器
+python-dotenv==1.0.0 #環境變數
+certifi==2024.2.2 #ssl
 
-paypalrestsdk==1.13.3
-google-cloud-secret-manager==2.7.2
-google-cloud-storage==2.16.0
+paypalrestsdk==1.13.3 #paypal
+google-cloud-secret-manager==2.7.2 #google secret
+google-cloud-storage==2.16.0 #google storage
 
-Werkzeug==3.0.1
+Werkzeug==3.0.1 #伺服器

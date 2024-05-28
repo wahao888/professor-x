@@ -329,6 +329,13 @@
     #videoInfo span, #fileInfo span {
       padding-right: 20px; /* 右側內邊距 */
     }
+    #video_estimateTime, #audio_estimateTime {
+      font-weight: bold; 
+      color: #FF4500; # 警告顏色
+      background-color: #FFF3CD; # 警告顏色
+      padding: 5px 10px; 
+      border-radius: 5px;
+    }
 
 
     @media (max-width: 767px) {
@@ -486,6 +493,7 @@
               <span id="duration">影片時間: 未知</span>
               <span id="estimatedTokens">預計消耗: 未知</span>
               <span id="videotitle">影片標題: 未知</span>
+              <span id="video_estimateTime">預計處理時間： 未知</span>
               <input type="checkbox" id="YT_addTimestamp" name="YT_addTimestamp" value="true">
               <label for="YT_addTimestamp" class="label-btn">添加時間戳</label>
             </div>
@@ -506,6 +514,7 @@
               <span id="audioLength">音訊長度: 未知</span>
               <span id="estimatedCost">預計消耗: 未知</span>
               <span id="fileName">檔案名稱: 未知</span>
+              <span id="audio_estimateTime">預計處理時間： 未知</span>
               <input type="checkbox" id="Audio_addTimestamp" name="Audio_addTimestamp" value="true">
               <label for="Audio_addTimestamp" class="label-btn">添加時間戳</label>
             </div>
@@ -523,7 +532,7 @@
             </div>
           </div>
 
-          <div id="progressBar" class="progressBar" style="display: none">處理中...請勿關閉或重整瀏覽器...</div>
+          <div id="progressBar" class="progressBar" style="display: none">背景處理中...您可以安心的離開此頁面，並隨時回來察看，預估：<span id="estimateTime"></span> 分鐘完成！</div>
         </div>
 
         <div class="content-container">
@@ -541,7 +550,7 @@
     </div>
     
     
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         // 標籤點擊變色
@@ -644,6 +653,7 @@
               document.getElementById("duration").textContent = `影片時間: ${data.duration} 秒`;
               document.getElementById("estimatedTokens").textContent = `預計消耗: ${data.estimatedTokens} 點`;
               document.getElementById("videotitle").textContent = `影片標題: ${data.videoTitle}`;
+              document.getElementById("video_estimateTime").textContent = `預計處理時間： ${data.estimate_time_minutes} 分鐘`;
               document.getElementById("videoInfo").style.display = "block";
               document.getElementById("fetchButton").disabled = false;
               document.getElementById("fetchButton").classList.replace("button-grey", "button-green");
@@ -683,9 +693,7 @@
               } else {
                   document.getElementById('fileNameDisplay').textContent = file.name; // 顯示檔案名稱
                   uploadButton.disabled = false;  // 啟用上傳按鈕
-                  transcribeButton.disabled = false;  // 啟用轉錄按鈕
                   uploadButton.classList.replace("button-grey", "button-green");
-                  transcribeButton.classList.replace("button-grey", "button-green");
               }
           } else {
               uploadButton.disabled = true;  // 禁用上傳按鈕
@@ -697,6 +705,7 @@
       });
   });
 
+
     // 顯示檔案的名稱
     document.getElementById('audioFileInput').addEventListener('change', function() {
       // 獲取檔案名稱，如果選擇了檔案
@@ -704,6 +713,7 @@
       // 更新顯示檔名的元素
       document.getElementById('fileNameDisplay').textContent = fileName;
   });
+
 
     // 用戶上傳檔案，預估消耗
     function uploadFile() {
@@ -726,12 +736,13 @@
         document.getElementById('audioLength').textContent = `音訊長度: ${data.audioLength} 秒`;
         document.getElementById('estimatedCost').textContent = `預計消耗: ${data.estimatedCost} 點`;
         document.getElementById('fileName').textContent = `檔案名稱: ${data.fileName}`;
+        document.getElementById("audio_estimateTime").textContent = `預計處理時間： ${data.estimate_time_minutes.toFixed(1)} 分鐘`;
         document.getElementById("fileInfo").style.display = "block";
         document.getElementById("transcribeButton").disabled = false;
         document.getElementById("transcribeButton").classList.replace("button-grey", "button-green");
         button.textContent = "上傳檔案"; // 更改回原來的按鈕文字
-        button.disabled = false; // 啟用按鈕
-        button.classList.replace("button-grey", "button-green"); // 更改按鈕成綠色
+        button.disabled = true;
+        button.classList.replace("button-green", "button-grey");
       })
       .catch(error => console.error('Error:', error));
   }
@@ -740,12 +751,16 @@
 
     // Youtube音訊轉文字的摘要
       function fetchHighlights() {
+        // 顯示當前時間
+        console.log("轉錄開始時間：", new Date().toLocaleTimeString());
+
         const button = document.getElementById('fetchButton');
         button.textContent = "處理中..."; // 更改按鈕文字
         button.disabled = true; // 禁用按鈕
         button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
-        const progressBar = document.getElementById("progressBar");
+        const estimateTime = document.getElementById("video_estimateTime").textContent.split("： ")[1].split(" 分鐘")[0];
+        document.getElementById("progressBar").textContent = `背景處理中...您可以安心的離開此頁面，並隨時回來察看，預估：${estimateTime} 分鐘完成！`;
         progressBar.style.display = "block"; // 顯示進度條
 
         // 重置“整理文章”的按鈕狀態
@@ -754,33 +769,50 @@
 
         const url = document.getElementById("youtubeUrl").value;
         const YT_addTimestamp = document.getElementById("YT_addTimestamp").checked;
-        const audioLength = document.getElementById("duration").textContent.split(": ")[1]; // 從界面獲取影片時間
+
         fetch("/process_video", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+              "Content-Type": "application/json",
           },
-          body: JSON.stringify({ youtubeUrl: url, audioLength: audioLength, YT_addTimestamp: YT_addTimestamp }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
+          body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp }),
+      })
+      .then(response => {
+          if (response.ok) {
+              return response.json();
+          } else {
+              throw new Error("請求失敗");
+          }
+      })
+      .catch((error) => {
+          console.error("Error:", error);
+          progressBar.style.display = "none";
+          button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+          button.disabled = true;
+          button.classList.replace("button-green", "button-grey");
+      });
+
+      const socket = io();
+      socket.on('video_processed', function(data) {
+        if (data.success) {
             document.getElementById("transcription").textContent = data.transcription;
             document.getElementById("summary").textContent = data.summary;
-            console.log(data.message);
             progressBar.style.display = "none"; // 隱藏進度條
+            button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+            button.disabled = true;
+            button.classList.replace("button-green", "button-grey");
             // 更新點數顯示
             const pointsDisplay = document.getElementById("user-points");
-            pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
+            pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;
 
             // 創建新標籤並添加到左側列表
             const tagsContainer = document.getElementById("tagsContainer");
             const newTag = document.createElement("div");
             newTag.textContent = data.file_name;
-            newTag.setAttribute("url", url); // 使用YouTube URL作為示例唯一標識
+            newTag.setAttribute("url", data.url); // 使用YouTube URL作為示例唯一標識
             newTag.className = "tag";
             newTag.onclick = function() {
-              displayVideoContent(this.getAttribute("url"));
+                displayVideoContent(this.getAttribute("url"));
             };
             // 將新標籤插入到容器的最前面
             if (tagsContainer.firstChild) {
@@ -794,33 +826,29 @@
             localStorage.setItem("sorted_content", data.sorted_content);
             localStorage.setItem("summary", data.summary);
 
-          } else {
-            alert(data.message);
-          }
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-          })
-          .finally(() => {
-            // 不管請求成功或失敗，最後都隱藏進度條
-            document.getElementById("progressBar").style.display = "none";
-            // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
-            button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
-            button.disabled = true; // 禁用按鈕
-            button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
-        });
-      }
+            console.log("Youtube影片轉錄成功！結束時間：", new Date().toLocaleTimeString());
+        }
+    });
+  }
+
+
 
 
     // 用戶上傳mp3獲取音訊內容
     function transcribeAudio() {
+      // 顯示當前時間
+      console.log("轉錄開始時間：");
+      console.log(new Date().toLocaleTimeString());
+
       const button = document.getElementById('transcribeButton');
       button.textContent = "處理中..."; // 更改按鈕文字
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
   
-      const progressBar = document.getElementById("progressBar");
+      const estimateTime = document.getElementById("audio_estimateTime").textContent.split("： ")[1].split(" 分鐘")[0];
+      document.getElementById("progressBar").textContent = `背景處理中...您可以安心的離開此頁面，並隨時回來察看，預估：${estimateTime} 分鐘完成！`;
       progressBar.style.display = "block"; // 顯示進度條
+
   
       // 重置“整理文章”的按鈕狀態
       var sortContentCheckbox = document.getElementById("sortContent");
@@ -829,57 +857,77 @@
       const fileName = document.getElementById("fileName").textContent.split(": ")[1]; // 從界面獲取檔案名稱
       console.log("fileName: ",fileName);
       const Audio_addTimestamp = document.getElementById("Audio_addTimestamp").checked;
+
       fetch('/process_audio', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ fileName: fileName, Audio_addTimestamp: Audio_addTimestamp}), // 向後端發送檔案名稱
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              document.getElementById("transcription").textContent = data.transcription;
-              document.getElementById("summary").textContent = data.summary;
-              // 更新點數顯示
-              const pointsDisplay = document.getElementById("user-points");
-              pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;  // 使用返回的新點數更新UI
-  
-              // 創建新標籤並添加到左側列表
-              const tagsContainer = document.getElementById("tagsContainer");
-              const newTag = document.createElement("div");
-              newTag.textContent = data.file_name; // 顯示檔案名稱
-              newTag.setAttribute("url", data.file_name); // 用檔案名稱作為唯一標識
-              newTag.className = "tag";
-              newTag.onclick = function() { displayVideoContent(this.getAttribute("url")); };
-              // 將新標籤插入到容器的最前面
-              if (tagsContainer.firstChild) {
-                  tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
-              } else {
-                  tagsContainer.appendChild(newTag);
-              }
-  
-              // 將結果存儲到localStorage
-              localStorage.setItem("transcription", data.transcription);
-              localStorage.setItem("sorted_content", data.sorted_content);
-              localStorage.setItem("summary", data.summary);
-          } else {
-              alert(data.message);
-          }
-      })
-      .catch(error => {
-          console.error("Error:", error);
-      })
-      .finally(() => {
-          // 不管請求成功或失敗，最後都隱藏進度條
-          progressBar.style.display = "none";
-          // 處理完成後可選擇是否重新啟用按鈕和更改回原來的文字
-          button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
-          button.disabled = true; // 保持按鈕為禁用狀態
-          button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
-      });
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileName: fileName, Audio_addTimestamp: Audio_addTimestamp}), // 向後端發送檔案名稱
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error("請求失敗");
+        }
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        progressBar.style.display = "none";
+        button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+        button.disabled = true;
+        button.classList.replace("button-green", "button-grey");
+    });
+
+    // 通過Socket.IO接收處理結果
+    const socket = io();
+    socket.on('audio_processed', function(data) {
+        if (data.success) {
+            document.getElementById("transcription").textContent = data.transcription;
+            document.getElementById("summary").textContent = data.summary;
+            progressBar.style.display = "none"; // 隱藏進度條
+            button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+            button.disabled = true;
+            button.classList.replace("button-green", "button-grey");
+            // 更新點數顯示
+            const pointsDisplay = document.getElementById("user-points");
+            pointsDisplay.textContent = `您目前有 ${data.new_points} 點`;
+
+            // 創建新標籤並添加到左側列表
+            const tagsContainer = document.getElementById("tagsContainer");
+            const newTag = document.createElement("div");
+            newTag.textContent = data.file_name;
+            newTag.setAttribute("url", data.file_name); // 用檔案名稱作為唯一標識
+            newTag.className = "tag";
+            newTag.onclick = function() { displayVideoContent(this.getAttribute("url")); };
+            // 將新標籤插入到容器的最前面
+            if (tagsContainer.firstChild) {
+                tagsContainer.insertBefore(newTag, tagsContainer.firstChild);
+            } else {
+                tagsContainer.appendChild(newTag);
+            }
+
+            // 將結果存儲到localStorage
+            localStorage.setItem("transcription", data.transcription);
+            localStorage.setItem("sorted_content", data.sorted_content);
+            localStorage.setItem("summary", data.summary);
+
+            console.log("上傳音訊轉錄成功！");
+            console.log("轉錄結束時間：");
+            console.log(new Date().toLocaleTimeString());
+
+        } else {
+            alert(data.message);
+            progressBar.style.display = "none";
+            button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
+            button.disabled = true;
+            button.classList.replace("button-green", "button-grey");
+        }
+    });
   }
   
+
       // 好閱讀模式
       function toggleReadingMode() {
         var checkbox = document.getElementById('sortContent');

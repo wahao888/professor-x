@@ -32,9 +32,11 @@ import importlib.util
 from bson import ObjectId # 用於處理MongoDB的ObjectID
 import string # 用於生成隨機字符串 generate_safe_filename()
 import random # 用於生成隨機字符串 generate_safe_filename()
+from flask_socketio import SocketIO, emit # 背景處理
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app)
 
 # 設定日誌級別和格式
 logging.basicConfig(
@@ -321,6 +323,9 @@ def get_video_info():
             session['estimated_tokens'] = estimated_tokens
             print("estimated_tokens:", estimated_tokens)
             logging.info(f"Video info retrieved: Duration: {duration} seconds, Estimated tokens: {estimated_tokens}")
+            # 計算預估時間
+            estimate_time_minutes = round(float(duration) / (60 * 5), 1)  # 每10分鐘影片需要2分鐘處理時間
+
 
         #檢查用戶點數是否足夠
         user_points = session.get('user_points', 0)
@@ -328,7 +333,7 @@ def get_video_info():
             logging.error(f"User: {session.get('name')} has insufficient points.")
             return jsonify({"success": False, "message": "點數不足，請儲值"}), 400
 
-        return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens, "videoTitle": video_title})
+        return jsonify({"success": True, "duration": duration, "estimatedTokens": estimated_tokens, "videoTitle": video_title, "estimate_time_minutes": estimate_time_minutes})
     except Exception as e:
         print("錯誤訊息:", str(e))
         logging.error(f"Error getting video info: {str(e)}")
@@ -368,6 +373,9 @@ def upload_file():
     print("audio_length:", audio_length)
     print("estimated_cost:", estimated_cost)
     print("filename:", filename)
+    # 計算預估時間
+    estimate_time_minutes = round(float(audio_length) / (60 * 5), 1)  # 每10分鐘影片需要2分鐘處理時間
+
 
     #檢查用戶點數是否足夠
     user_points = session.get('user_points', 0)
@@ -376,7 +384,7 @@ def upload_file():
         return jsonify({"success": False, "message": "點數不足，請儲值"}), 400
 
     logging.info(f"File uploaded: {filename}, Length: {audio_length} seconds, Estimated cost: {estimated_cost} tokens")
-    return jsonify(success=True, fileName=filename, audioLength=audio_length, estimatedCost=estimated_cost)
+    return jsonify(success=True, fileName=filename, audioLength=audio_length, estimatedCost=estimated_cost, estimate_time_minutes=estimate_time_minutes)
 
 
 # 扣除點數
@@ -591,6 +599,8 @@ def process_video():
     logging.info(f"add_timestamp: {add_timestamp}")
     estimated_tokens = session.get('estimated_tokens', 0)
     logging.info(f"START Processing video: {youtube_url}")
+    audio_length = float(data.get('audioLength', 0))  # 獲取音訊長度
+    
 
     # 針對該用戶檢查URL是否已經處理過
     google_id = session.get('google_id')  # 獲取使用者的Google ID
@@ -658,14 +668,20 @@ def process_video():
         print({"success": False, "message": str(e)})
         logging.error(f"Error saving content: {str(e)}")
 
+    # 通知前端處理完成
+    socketio.emit('video_processed', {
+        'success': True,
+        'url': youtube_url,
+        'transcription': transcription,
+        'sorted_content': sorted_content,
+        'summary': summary,
+        'file_name': file_name,
+        'new_points': session.get('user_points', 0)
+    })
+
     return jsonify({
-    'success': True,
-    'transcription': transcription,
-    "sorted_content": sorted_content,
-    'summary': summary,
-    'file_name': file_name,
-    'new_points': session.get('user_points', 0)  # 返回更新後的點數  
-})
+        'success': True
+    })
 
 
 # 上傳的mp3檔案轉文字
@@ -674,13 +690,12 @@ def process_audio():
     data = request.json
     user_id = session.get('google_id')
     filename = data.get('fileName')
-    audio_length = data.get('audioLength', 0)  # 獲取音訊長度
+    audio_length = float(data.get('audioLength', 0))  # 獲取音訊長度
     add_timestamp = data.get('Audio_addTimestamp')
     estimated_cost = session.get('estimated_cost', 0)
 
     # if not transcription_service.can_transcribe(user_id, audio_length):
     #     return jsonify({"success": False, "message": "今日轉錄次數已達上限或超過單次轉錄時間上限"}), 403
-
 
     # 語音轉文字
     segment_files = segment_audio(filename, 5) # 返回分段音訊檔案的路徑列表
@@ -730,14 +745,19 @@ def process_audio():
     except Exception as e:
         print({"success": False, "message": str(e)})
         logging.error(f"Error saving content: {str(e)}")
-
+    
+    # 通知前端處理完成
+    socketio.emit('audio_processed', {
+        'success': True,
+        'url': filename,
+        'transcription': transcription,
+        'sorted_content': sorted_content,
+        'summary': summary,
+        'file_name': filename,
+        'new_points': session.get('user_points', 0)
+    })
     return jsonify({
-    'success': True,
-    'transcription': transcription,
-    "sorted_content": sorted_content,
-    'summary': summary,
-    'file_name': filename,
-    'new_points': session.get('user_points', 0)  # 返回更新後的點數   
+        'success': True,
     })
 
 
