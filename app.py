@@ -45,7 +45,7 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
-    
+
 # 設定日誌級別和格式
 logging.basicConfig(
     level=logging.DEBUG,
@@ -1172,7 +1172,8 @@ def subscribe():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True) # 部署環境使用
+    # app.run(host='0.0.0.0', port=8000, debug=True) # 部署環境使用
+    socketio.run(app, host='0.0.0.0', port=8000) 
 
 
 # 開發階段不使用HTTPS，終端機輸入：
