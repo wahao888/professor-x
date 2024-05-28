@@ -36,8 +36,16 @@ from flask_socketio import SocketIO, emit # 背景處理
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+    
 # 設定日誌級別和格式
 logging.basicConfig(
     level=logging.DEBUG,
