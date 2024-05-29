@@ -554,7 +554,9 @@
     <script>
 
       const socket = io({
-        transports: ['websocket']
+        transports: ['websocket'],
+        pingTimeout: 600000, // 600 seconds
+        pingInterval: 25000 // 25 seconds
       });
 
       socket.on("connect_error", (err) => {
