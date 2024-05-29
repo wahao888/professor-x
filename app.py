@@ -33,6 +33,7 @@ from bson import ObjectId # 用於處理MongoDB的ObjectID
 import string # 用於生成隨機字符串 generate_safe_filename()
 import random # 用於生成隨機字符串 generate_safe_filename()
 from flask_socketio import SocketIO, emit, send # 背景處理
+import gc # 垃圾回收
 
 
 app = Flask(__name__)
@@ -777,6 +778,18 @@ def sort_content(content):
     logging.info(f"Content sorted successfully. {response.usage.prompt_tokens} prompt tokens used.")
     print(f'Content sorted successfully. {response.usage.prompt_tokens} prompt tokens used.')
     return sorted_content
+
+
+@socketio.on('connect')
+def handle_connect():
+    # 刪除每個連接的HTTP請求引用
+    request.sid = None
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    # 管理垃圾收集
+    if len(socketio.server.manager.get_participants('/', '/')) == 0:
+        gc.collect()
 
 
 # @app.route('/process_content', methods=['POST'])
