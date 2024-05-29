@@ -23,3 +23,5 @@ google-cloud-secret-manager==2.7.2 #google secret
 google-cloud-storage==2.16.0 #google storage
 
 Werkzeug==3.0.1 #伺服器
+eventlet==0.36.1 #背景執行
+greenlet==3.0.3 #背景執行

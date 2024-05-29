@@ -33,10 +33,13 @@ from bson import ObjectId # 用於處理MongoDB的ObjectID
 import string # 用於生成隨機字符串 generate_safe_filename()
 import random # 用於生成隨機字符串 generate_safe_filename()
 from flask_socketio import SocketIO, emit, send # 背景處理
+import eventlet
+import eventlet.wsgi
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
 
 
 # 設定日誌級別和格式
