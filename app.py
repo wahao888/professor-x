@@ -38,13 +38,23 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# @socketio.on('connect')
+# def handle_connect():
+#     print('Client connected')
+
+# @socketio.on('disconnect')
+# def handle_disconnect():
+#     print('Client disconnected')
+
 @socketio.on('connect')
-def handle_connect():
+def test_connect():
     print('Client connected')
+    emit('my_response', {'data': 'Connected'})
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def test_disconnect():
     print('Client disconnected')
+
 
 # 設定日誌級別和格式
 logging.basicConfig(

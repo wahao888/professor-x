@@ -552,6 +552,24 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', (event) => {
+        var socket = io('https://professor-x.lillian-ai.com', { path: '/socket.io/' });
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('my_response', function(msg) {
+            console.log('Received message:', msg.data);
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+        });
+    });
+
+
+
        // 初始化 Socket.IO 連接
         const socket = io('https://professor-x.lillian-ai.com', {
         path: '/socket.io/',
