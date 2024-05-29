@@ -787,9 +787,9 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    # 管理垃圾收集
-    if len(socketio.server.manager.get_participants('/', '/')) == 0:
-        gc.collect()
+    if sum(1 for _ in socketio.server.manager.get_participants('/', '/')) == 0:
+        # 沒有其他參與者，釋放資源或執行其他操作
+        print("No participants remaining, cleaning up...")
 
 
 # @app.route('/process_content', methods=['POST'])
