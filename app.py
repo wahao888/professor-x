@@ -782,14 +782,17 @@ def sort_content(content):
 
 @socketio.on('connect')
 def handle_connect():
+    logging.info('Client connected')
     # 刪除每個連接的HTTP請求引用
     request.sid = None
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    if sum(1 for _ in socketio.server.manager.get_participants('/', '/')) == 0:
-        # 沒有其他參與者，釋放資源或執行其他操作
-        print("No participants remaining, cleaning up...")
+    last_to_disconnect = sum(1 for _ in socketio.server.manager.get_participants('/', '/')) == 0
+    if last_to_disconnect:
+        gc.collect()
+        logging.info("Last participant disconnected, garbage collected")
+
 
 
 # @app.route('/process_content', methods=['POST'])
