@@ -552,6 +552,7 @@
     
     
     <script>
+
       const socket = io({
         transports: ['websocket']
       });
@@ -806,9 +807,7 @@
           button.classList.replace("button-green", "button-grey");
       });
 
-      const socket = io({
-        transports: ['websocket']
-      });
+ 
       socket.on('video_processed', function(data) {
         if (data.success) {
             document.getElementById("transcription").textContent = data.transcription;
@@ -897,9 +896,6 @@
     });
 
     // 通過Socket.IO接收處理結果
-    const socket = io({
-      transports: ['websocket']
-    });
     socket.on('audio_processed', function(data) {
         if (data.success) {
             document.getElementById("transcription").textContent = data.transcription;

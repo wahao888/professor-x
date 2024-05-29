@@ -790,7 +790,7 @@ def handle_connect():
 def handle_disconnect():
     last_to_disconnect = sum(1 for _ in socketio.server.manager.get_participants('/', '/')) == 0
     if last_to_disconnect:
-        gc.collect()
+        gc()
         logging.info("Last participant disconnected, garbage collected")
 
 
