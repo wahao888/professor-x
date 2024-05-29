@@ -32,7 +32,7 @@ import importlib.util
 from bson import ObjectId # 用於處理MongoDB的ObjectID
 import string # 用於生成隨機字符串 generate_safe_filename()
 import random # 用於生成隨機字符串 generate_safe_filename()
-from flask_socketio import SocketIO, emit # 背景處理
+from flask_socketio import SocketIO, emit, send # 背景處理
 
 app = Flask(__name__)
 CORS(app)
@@ -55,6 +55,10 @@ def test_connect():
 def test_disconnect():
     print('Client disconnected')
 
+@socketio.on('message')
+def handle_message(message):
+    print('received message: ' + message)
+    send('Echo: ' + message)
 
 # 設定日誌級別和格式
 logging.basicConfig(
