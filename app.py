@@ -882,7 +882,7 @@ def get_video_content():
     if content:
         return jsonify({
             "success": True,
-            "content_id": str(content["_id"]),
+            "currentContentId": str(content["_id"]),
             "transcription": content["transcription"],
             "sorted_content": content.get("sorted_content", ""),
             "summary": content["summary"]
