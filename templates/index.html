@@ -780,6 +780,13 @@
         // 顯示當前時間
         console.log("轉錄開始時間：", new Date().toLocaleTimeString());
 
+        // 發送事件到 Google Analytics
+        gtag('event', 'click', {
+          'event_category': 'Button',
+          'event_label': 'Transcribe YouTube Video',
+          'value': 1
+        });
+
         const button = document.getElementById('fetchButton');
         button.textContent = "處理中..."; // 更改按鈕文字
         button.disabled = true; // 禁用按鈕
@@ -807,7 +814,8 @@
           if (response.ok) {
               return response.json();
           } else {
-              throw new Error("請求失敗");
+            // 當URL已經處理過時，顯示提示訊息
+            alert(data.message, 'error');
           }
       })
       .catch((error) => {
@@ -902,7 +910,8 @@
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error("請求失敗");
+            // 當URL已經處理過時，顯示提示訊息
+            alert(data.message, 'error');
         }
     })
     .catch((error) => {
