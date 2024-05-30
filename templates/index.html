@@ -8,7 +8,9 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-R7BMVCBMRR');
+      gtag('config', 'G-R7BMVCBMRR', {
+        'cookie_flags': 'SameSite=None;Secure'
+      });
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -672,6 +674,7 @@
               "Content-Type": "application/json",
           },
           body: JSON.stringify({ youtubeUrl: url}),
+          credentials: "include" // 保持會話
       })
       .then((response) => response.json())
       .then((data) => {
@@ -756,6 +759,7 @@
       fetch('/upload_file', {
           method: 'POST',
           body: formData,
+          credentials: "include" // 保持會話
       })
       .then(response => response.json())
       .then(data => {
@@ -809,6 +813,7 @@
               "Content-Type": "application/json",
           },
           body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp }),
+          credentials: "include" // 保持會話
       })
       .then((response) => {
         if (response.ok) {
@@ -912,6 +917,7 @@
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ fileName: fileName, Audio_addTimestamp: Audio_addTimestamp}), // 向後端發送檔案名稱
+        credentials: 'include' // 保持會話
     })
     .then((response) => {
       if (response.ok) {
@@ -1061,6 +1067,8 @@
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ youtubeUrl: url }),
+          credentials: 'include' // 保持會話
+
         })
         .then((response) => response.json())
         .then((data) => {
