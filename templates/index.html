@@ -810,13 +810,15 @@
           },
           body: JSON.stringify({ youtubeUrl: url, YT_addTimestamp: YT_addTimestamp }),
       })
-      .then(response => {
-          if (response.ok) {
-              return response.json();
-          } else {
-            // 當URL已經處理過時，顯示提示訊息
-            alert(data.message, 'error');
-          }
+      .then((response) => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            // 當response不ok時解析錯誤訊息
+            return response.json().then((data) => {
+              alert(data.message);
+            });
+        }
       })
       .catch((error) => {
           console.error("Error:", error);
@@ -906,13 +908,15 @@
         },
         body: JSON.stringify({ fileName: fileName, Audio_addTimestamp: Audio_addTimestamp}), // 向後端發送檔案名稱
     })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            // 當URL已經處理過時，顯示提示訊息
-            alert(data.message, 'error');
-        }
+    .then((response) => {
+      if (response.ok) {
+          return response.json();
+      } else {
+          // 當response不ok時解析錯誤訊息
+          return response.json().then((data) => {
+            alert(data.message);
+          });
+      }
     })
     .catch((error) => {
         console.error("Error:", error);
