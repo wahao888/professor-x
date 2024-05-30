@@ -611,7 +611,7 @@ def process_video():
     if existing_content:
         # 如果URL已經存在，返回提示
         logging.info("Video already processed.")
-        return jsonify({"success": False, "message": "已經處理過囉！"})
+        return jsonify({"success": False, "message": "已經處理過囉！"}), 409
 
     # 全面檢查URL是否已經處理過
     checkall_existing_content = content_db.find_one({"url": youtube_url})
@@ -623,7 +623,7 @@ def process_video():
             "transcription": checkall_existing_content["transcription"],
             "summary": checkall_existing_content["summary"],
             "file_name": checkall_existing_content["file_name"]
-        })
+        }), 200
     # 沒有處理過的URL
     logging.info(f"Not yet processed video: {youtube_url}")
 
@@ -669,7 +669,7 @@ def process_video():
         
     except Exception as e:
         print({"success": False, "message": str(e)})
-        logging.error(f"Error saving content: {str(e)}")
+        logging.error(f"Error saving content: {str(e)}"), 500
 
     # 通知前端處理完成
     socketio.emit('video_processed', {

@@ -812,25 +812,28 @@
       })
       .then((response) => {
         if (response.ok) {
-            console.log("response.ok: ", response.ok);
             return response.json();
-        } else {
-            console.log("response not ok: ", response.ok);
-            // 當response不ok時解析錯誤訊息
+        } else if (response.status === 409) {
+            // 當response狀態碼為409時解析錯誤訊息
             return response.json().then((data) => {
-              alert(data.message);
+                throw new Error(data.message);
+            });
+        } else {
+            return response.json().then((data) => {
+                throw new Error(data.message);
             });
         }
-      })
+    })
       .catch((error) => {
           console.error("Error:", error);
+          alert(error.message);
           progressBar.style.display = "none";
           button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
           button.disabled = true;
           button.classList.replace("button-green", "button-grey");
       });
 
- 
+
       socket.on('video_processed', function(data) {
         if (data.success) {
             document.getElementById("transcription").textContent = data.transcription;
@@ -912,18 +915,21 @@
     })
     .then((response) => {
       if (response.ok) {
-          console.log("response.ok: ", response.ok);
           return response.json();
-      } else {
-          console.log("response not ok: ", response.ok);
-          // 當response不ok時解析錯誤訊息
+      } else if (response.status === 409) {
+          // 當response狀態碼為409時解析錯誤訊息
           return response.json().then((data) => {
-            alert(data.message);
+              throw new Error(data.message);
+          });
+      } else {
+          return response.json().then((data) => {
+              throw new Error(data.message);
           });
       }
-    })
+  })
     .catch((error) => {
         console.error("Error:", error);
+        alert(error.message);
         progressBar.style.display = "none";
         button.textContent = "音訊轉文字"; // 更改回原來的按鈕文字
         button.disabled = true;
