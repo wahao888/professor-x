@@ -812,8 +812,10 @@
       })
       .then((response) => {
         if (response.ok) {
+            console.log("response.ok: ", response.ok);
             return response.json();
         } else {
+            console.log("response not ok: ", response.ok);
             // 當response不ok時解析錯誤訊息
             return response.json().then((data) => {
               alert(data.message);
@@ -910,8 +912,10 @@
     })
     .then((response) => {
       if (response.ok) {
+          console.log("response.ok: ", response.ok);
           return response.json();
       } else {
+          console.log("response not ok: ", response.ok);
           // 當response不ok時解析錯誤訊息
           return response.json().then((data) => {
             alert(data.message);
