@@ -37,7 +37,7 @@ import gc # 垃圾回收
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins="*", ping_timeout=6000, ping_interval=25)
 
 
