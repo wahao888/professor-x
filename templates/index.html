@@ -866,6 +866,13 @@
       console.log("轉錄開始時間：");
       console.log(new Date().toLocaleTimeString());
 
+      // 發送事件到 Google Analytics
+      gtag('event', 'click', {
+        'event_category': 'Button',
+        'event_label': 'Transcribe Audio',
+        'value': 1
+      });
+
       const button = document.getElementById('transcribeButton');
       button.textContent = "處理中..."; // 更改按鈕文字
       button.disabled = true; // 禁用按鈕
