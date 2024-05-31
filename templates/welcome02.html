@@ -124,7 +124,7 @@
                 if (data.success) {
                     alert('訂閱成功！請檢查您的郵箱以確認訂閱。');
                 } else {
-                    alert('訂閱失敗，請重試。');
+                    alert(data.message || '訂閱失敗，請重試。');
                 }
             })
             .catch(error => {
