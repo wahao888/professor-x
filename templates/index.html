@@ -470,13 +470,35 @@
   }
 }
   
+
+/* 匯出文字檔樣式 */
+.export-button {
+  background-color: #AAB8AB; /* 綠色背景 */
+  border: none; /* 無邊框 */
+  color: white; /* 白色文字 */
+  padding: 5px 10px; /* 內邊距 */
+  text-align: center; /* 文字居中 */
+  text-decoration: none; /* 無下劃線 */
+  display: inline-block; /* 行內塊元素 */
+  font-size: 10px; /* 字體大小 */
+  margin: 5px 2px; /* 外邊距 */
+  cursor: pointer; /* 鼠標指針 */
+  border-radius: 5px; /* 圓角 */
+}
+
+.export-button:hover {
+  background-color: #728A7A; /* 懸停時的深綠色背景 */
+}
+
+
+
  /* 意見回饋 */
- .floating-button {
+  .floating-button {
   position: fixed;
   bottom: 20px;
   right: 20px;
   padding: 15px 20px;
-  background-color: #4CAF50;
+  background-color: #8E9BAE;
   color: white;
   border: none;
   border-radius: 50px;
@@ -484,7 +506,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 .floating-button:hover {
-  background-color: #45a049;
+  background-color: #75809C;
 }
 .feedback-container {
   display: none; /* 預設隱藏 */
@@ -613,11 +635,13 @@
         <div class="content-container">
           <div id="transcription-section" style="margin-right: 2%">
             <h2>音訊內容</h2>
+            <button class="export-button" onclick="exportToFile('transcription', 'transcription.txt')">匯出文字檔</button>
             <input type="hidden" id="currentContentId" value="">
             <div id="transcription" style="white-space:pre-wrap;">轉錄內容將顯示在這裡</div>
           </div>
           <div id="summary-section" style="margin-left: 2%">
             <h2>內容摘要</h2>
+            <button class="export-button" onclick="exportToFile('summary', 'summary.txt')">匯出文字檔</button>
             <div id="summary" style="white-space:pre-wrap;">摘要內容將顯示在這裡</div>
           </div>
         </div>
@@ -1089,6 +1113,31 @@
         }
       }
 
+      // 匯出文字檔
+      function exportToFile(elementId, filename) {
+        var element = document.getElementById(elementId);
+        var text = element.innerText;
+        var blob = new Blob([text], { type: 'text/plain' });
+        var anchor = document.createElement('a');
+    
+        anchor.download = filename;
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.target = '_blank';
+        anchor.style.display = 'none'; // 隱藏這個元素
+    
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    }
+    
+
+
+
+
+
+
+
+
       
       // 頁面加載
       document.addEventListener("DOMContentLoaded", function () {
@@ -1112,6 +1161,7 @@
           toggleReadingMode();
         }
       });
+
 
       // 從後端獲取用戶標籤
       function fetchUserContents() {
@@ -1141,7 +1191,6 @@
         })
         .catch(error => console.error('Error:', error));
     }
-
 
 
       // 點擊標籤顯示相應的影片內容
@@ -1197,6 +1246,7 @@
         });
       }
 
+
       // 開關"我的內容"菜單
       function toggleMenu() {
         var menu = document.getElementById("menu");
@@ -1215,6 +1265,7 @@
           form.style.display = 'none';
         }
       }
+
 
       // 提交意見回饋
       function submitFeedback() {
