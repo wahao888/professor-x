@@ -677,6 +677,13 @@
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
+      // 發送事件到 Google Analytics
+      gtag('event', 'click', {
+        'event_category': 'Button',
+        'event_label': 'get_video_info',
+        'value': 1
+      });
+
       // 重置“整理文章”的按鈕狀態
       var sortContentCheckbox = document.getElementById("sortContent");
       sortContentCheckbox.checked = false;
@@ -765,6 +772,13 @@
       button.disabled = true; // 禁用按鈕
       button.classList.replace("button-green", "button-grey"); // 更改按鈕成灰色
 
+      // 發送事件到 Google Analytics
+      gtag('event', 'click', {
+        'event_category': 'Button',
+        'event_label': 'upload_file',
+        'value': 1
+      });
+
       // 重置“整理文章”的按鈕狀態
       var sortContentCheckbox = document.getElementById("sortContent");
       sortContentCheckbox.checked = false;
@@ -801,7 +815,7 @@
         // 發送事件到 Google Analytics
         gtag('event', 'click', {
           'event_category': 'Button',
-          'event_label': 'Transcribe YouTube Video',
+          'event_label': 'process_video',
           'value': 1
         });
 
@@ -903,7 +917,7 @@
       // 發送事件到 Google Analytics
       gtag('event', 'click', {
         'event_category': 'Button',
-        'event_label': 'Transcribe Audio',
+        'event_label': 'process_audio',
         'value': 1
       });
 
