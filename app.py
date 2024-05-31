@@ -87,6 +87,8 @@ content_db = db["contents"]
 google_db = db["google_login"]
 users_db = db['users']
 email_subscriptions_db = db['email_subscriptions']
+feedbacks_collection = db['feedbacks']
+
 
 
 # 設置google login
@@ -1186,7 +1188,37 @@ def subscribe():
         logging.error(f"Error adding subscription: {e}")
         return jsonify({"success": False, "message": "訂閱失敗，請重試。"}), 500
 
+# ========== Email訂閱 以上 ==========
 
+# ========== 意見回饋 以下 ==========
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    data = request.get_json()
+    feedback = data.get('feedback')
+
+    if not feedback:
+        return jsonify(success=False, message="意見回饋內容不能為空。"), 400
+
+
+    # 確保會話中包含所需的用戶資訊
+    google_id = session.get('google_id')
+    name = session.get('name')
+    email = session.get('email')
+    
+    feedback_document = {
+    'feedback': feedback,
+    'google_id': google_id,
+    'name': name,
+    'email': email,
+    'timestamp': datetime.now()
+    
+    }
+    feedbacks_collection.insert_one(feedback_document)
+
+    return jsonify(success=True)
+
+# ========== 意見回饋 以上 ==========
 
 
 if __name__ == '__main__':

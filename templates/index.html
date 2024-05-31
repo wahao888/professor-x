@@ -470,6 +470,55 @@
   }
 }
   
+ /* 意見回饋 */
+ .floating-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.floating-button:hover {
+  background-color: #45a049;
+}
+.feedback-container {
+  display: none; /* 預設隱藏 */
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 300px;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.feedback-container h2 {
+  margin-bottom: 10px;
+}
+.feedback-container textarea {
+  width: 90%;
+  height: 100px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+.feedback-container button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.feedback-container button:hover {
+  background-color: #45a049;
+}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
   </head>
@@ -575,7 +624,16 @@
       </div>
     </div>
     
-    
+    <!-- 浮動按鈕 -->
+    <button class="floating-button" onclick="toggleFeedbackForm()">意見回饋</button>
+
+    <!-- 意見回饋表單 -->
+    <div class="feedback-container" id="feedbackForm">
+      <h2>意見回饋</h2>
+      <textarea id="feedback" placeholder="請輸入您的意見或建議"></textarea>
+      <button onclick="submitFeedback()">提交回饋</button>
+    </div>
+
     <script>
 
       const socket = io({
@@ -1147,6 +1205,46 @@
         } else {
           menu.classList.add("open");
         }
+      }
+
+      function toggleFeedbackForm() {
+        const form = document.getElementById('feedbackForm');
+        if (form.style.display === 'none' || form.style.display === '') {
+          form.style.display = 'block';
+        } else {
+          form.style.display = 'none';
+        }
+      }
+
+      // 提交意見回饋
+      function submitFeedback() {
+        const feedback = document.getElementById('feedback').value;
+        if (feedback.trim() === "") {
+          alert("請輸入您的意見或建議！");
+          return;
+        }
+
+        fetch('/submit_feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ feedback: feedback })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert("感謝您的回饋！");
+            document.getElementById('feedback').value = ""; // 清空文本框
+            document.getElementById('feedbackForm').style.display = 'none'; // 隱藏表單
+          } else {
+            alert("提交失敗，請重試。");
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert("提交失敗，請重試。");
+        });
       }
     </script>
   </body>
