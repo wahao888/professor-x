@@ -1166,6 +1166,11 @@ def subscribe():
 
     if not email or '@' not in email:
         return jsonify({"success": False, "message": "請提供有效的Email地址"}), 400
+    
+    existing_subscription = email_subscriptions_db.find_one({"email": email})
+    if existing_subscription:
+        return jsonify({"success": False, "message": "該Email已經訂閱過"}), 400
+
 
     email_subscriptions = {
         "email": email,
