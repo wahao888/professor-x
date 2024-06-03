@@ -342,6 +342,7 @@
         color: white; /* 修改文字顏色以顯示在深色背景上 */
       }
 
+
       #videoInfo, #fileInfo{
         display: flex; /* 使用flex來排列預估時間和token消耗 */
         width: 100%; /* 讓容器使用可用的全部寬度 */
@@ -540,6 +541,28 @@
 .feedback-container button:hover {
   background-color: #45a049;
 }
+
+
+/* 快速導覽 */
+.step-tooltip {
+  position: absolute;
+  background-color: rgba(0, 123, 255, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+  z-index: 1001;
+}
+.step-arrow {
+  position: absolute;
+  width: 0; 
+  height: 0; 
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid rgba(0, 123, 255, 0.8);
+  z-index: 1000;
+}
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
   </head>
@@ -602,8 +625,8 @@
                 <label for="audioFileInput" id="choosefile-button">選擇檔案</label><!-- 自定義的上傳按鈕 -->
                 <div id="fileNameDisplay" class="fileNameDisplay">尚未選擇檔案</div>
                 <input type="file" name="audioFile" id="audioFileInput" accept=".mp3,.m4a"><!-- 原生的選擇檔案 -->
-                <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" >上傳檔案</button>
-                <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled>音訊轉文字</button>
+                <button id="uploadButton" type="button" onclick="uploadFile()" class="button-grey" disabled=true>上傳檔案</button>
+                <button id="transcribeButton" onclick="transcribeAudio()" class="button-grey" disabled=true>音訊轉文字</button>
               </form>
             </div>
             <div id="fileInfo" class="info">
@@ -656,6 +679,25 @@
       <textarea id="feedback" placeholder="請輸入您的意見或建議"></textarea>
       <button onclick="submitFeedback()">提交回饋</button>
     </div>
+
+    <!-- 引導提示 -->
+    <div id="step1" class="step-tooltip" style="display: none; top: 20px; left: 50%;">
+      Step 1: 輸入YouTube網址或選擇音訊檔案(mp3/m4a)上傳
+      <div class="step-arrow" style="top: 40px; left: 50%;"></div>
+    </div>
+
+    <div id="step2" class="step-tooltip" style="display: none; top: 150px; left: 60%;">
+      Step 2: 點選預計消耗或上傳檔案
+      <div class="step-arrow" style="top: 40px; left: 50%;"></div>
+    </div>
+
+    <div id="step3" class="step-tooltip" style="display: none; top: 300px; left: 70%;">
+      Step 3: 點選音訊轉文字
+      <div class="step-arrow" style="top: 40px; left: 50%;"></div>
+    </div>
+    
+
+
 
     <script>
 
@@ -1296,6 +1338,34 @@
           alert("提交失敗，請重試。");
         });
       }
+
+
+      // 快速導覽
+      document.addEventListener("DOMContentLoaded", function() {
+        let currentStep = 1;
+    
+        function showStep(step) {
+          const stepElements = document.querySelectorAll('.step-tooltip');
+          stepElements.forEach(el => el.style.display = 'none');
+          const currentStepElement = document.getElementById(`step${step}`);
+          if (currentStepElement) {
+            currentStepElement.style.display = 'block';
+          }
+        }
+    
+        function nextStep() {
+          currentStep++;
+          showStep(currentStep);
+        }
+    
+        showStep(currentStep);
+    
+        document.getElementById('estimateButton').addEventListener('click', nextStep);
+        document.getElementById('uploadButton').addEventListener('click', nextStep);
+        document.getElementById('fetchButton').addEventListener('click', nextStep);
+        document.getElementById('transcribeButton').addEventListener('click', nextStep);
+      });
+      
     </script>
   </body>
 </html>

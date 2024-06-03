@@ -294,7 +294,7 @@ def checkin():
                 "points_history": {
                     "points": points_to_add,
                     "reason": f"每日簽到 {'連續簽到7日獎勵' if consecutive_days == 7 else ''}".strip(),
-                    "date": datetime.utcnow()
+                    "date": datetime.now()
                 }
             }
         }
