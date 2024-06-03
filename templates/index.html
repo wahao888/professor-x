@@ -672,13 +672,13 @@
     
     <!-- 浮動按鈕 -->
     <button class="floating-button" onclick="toggleFeedbackForm()">意見回饋</button>
-
     <!-- 意見回饋表單 -->
     <div class="feedback-container" id="feedbackForm">
       <h2>意見回饋</h2>
       <textarea id="feedback" placeholder="請輸入您的意見或建議"></textarea>
       <button onclick="submitFeedback()">提交回饋</button>
     </div>
+
 
     <!-- 引導提示 -->
     <div id="step1" class="step-tooltip" style="display: none; top: 20px; left: 50%;">
@@ -1341,30 +1341,60 @@
 
 
       // 快速導覽
-      document.addEventListener("DOMContentLoaded", function() {
-        let currentStep = 1;
-    
-        function showStep(step) {
-          const stepElements = document.querySelectorAll('.step-tooltip');
-          stepElements.forEach(el => el.style.display = 'none');
-          const currentStepElement = document.getElementById(`step${step}`);
-          if (currentStepElement) {
-            currentStepElement.style.display = 'block';
+        document.addEventListener("DOMContentLoaded", function() {
+          let currentStep = 1;
+      
+          function showStep(step) {
+            const stepElements = document.querySelectorAll('.step-tooltip');
+            stepElements.forEach(el => el.style.display = 'none');
+            const currentStepElement = document.getElementById(`step${step}`);
+            if (currentStepElement) {
+              currentStepElement.style.display = 'block';
+              positionTooltip(step);
+            }
           }
-        }
-    
-        function nextStep() {
-          currentStep++;
+      
+          function positionTooltip(step) {
+            const stepMappings = {
+              1: 'youtubeUrl',
+              2: 'estimateButton',
+              3: 'fetchButton'
+            };
+            const targetElement = document.getElementById(stepMappings[step]);
+            if (targetElement) {
+              const rect = targetElement.getBoundingClientRect();
+              const tooltip = document.getElementById(`step${step}`);
+              tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`; // 在目標元素上方10px
+              tooltip.style.left = `${rect.left + window.scrollX}px`; // 左側對齊目標元素
+            }
+          }
+      
+          function nextStep() {
+            currentStep++;
+            showStep(currentStep);
+          }
+      
           showStep(currentStep);
-        }
-    
-        showStep(currentStep);
-    
-        document.getElementById('estimateButton').addEventListener('click', nextStep);
-        document.getElementById('uploadButton').addEventListener('click', nextStep);
-        document.getElementById('fetchButton').addEventListener('click', nextStep);
-        document.getElementById('transcribeButton').addEventListener('click', nextStep);
-      });
+      
+          // 監聽YouTube網址輸入框的輸入事件
+          document.getElementById('youtubeUrl').addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+              nextStep();
+            }
+          });
+      
+          // 監聽音訊文件選擇框的變更事件
+          document.getElementById('audioFileInput').addEventListener('change', function() {
+            if (this.files.length > 0) {
+              nextStep();
+            }
+          });
+      
+          document.getElementById('estimateButton').addEventListener('click', nextStep);
+          document.getElementById('uploadButton').addEventListener('click', nextStep);
+          document.getElementById('fetchButton').addEventListener('click', nextStep);
+          document.getElementById('transcribeButton').addEventListener('click', nextStep);
+        });
       
     </script>
   </body>
