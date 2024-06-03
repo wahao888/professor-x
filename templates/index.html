@@ -1341,60 +1341,68 @@
 
 
       // 快速導覽
-        document.addEventListener("DOMContentLoaded", function() {
-          let currentStep = 1;
-      
-          function showStep(step) {
-            const stepElements = document.querySelectorAll('.step-tooltip');
-            stepElements.forEach(el => el.style.display = 'none');
-            const currentStepElement = document.getElementById(`step${step}`);
-            if (currentStepElement) {
-              currentStepElement.style.display = 'block';
-              positionTooltip(step);
-            }
+      document.addEventListener("DOMContentLoaded", function() {
+        let currentStep = 1;
+    
+        function showStep(step) {
+          const stepElements = document.querySelectorAll('.step-tooltip');
+          stepElements.forEach(el => el.style.display = 'none');
+          const currentStepElement = document.getElementById(`step${step}`);
+          if (currentStepElement) {
+            currentStepElement.style.display = 'block';
+            positionTooltip(step);
           }
-      
-          function positionTooltip(step) {
-            const stepMappings = {
-              1: 'youtubeUrl',
-              2: 'estimateButton',
-              3: 'fetchButton'
-            };
-            const targetElement = document.getElementById(stepMappings[step]);
-            if (targetElement) {
-              const rect = targetElement.getBoundingClientRect();
-              const tooltip = document.getElementById(`step${step}`);
-              tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`; // 在目標元素上方10px
-              tooltip.style.left = `${rect.left + window.scrollX}px`; // 左側對齊目標元素
-            }
+        }
+    
+        function positionTooltip(step) {
+          const stepMappings = {
+            1: 'youtubeUrl',
+            2: 'estimateButton',
+            3: 'fetchButton'
+          };
+          const targetElement = document.getElementById(stepMappings[step]);
+          if (targetElement) {
+            const rect = targetElement.getBoundingClientRect();
+            const tooltip = document.getElementById(`step${step}`);
+            tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`; // 在目標元素上方10px
+            tooltip.style.left = `${rect.left + window.scrollX}px`; // 左側對齊目標元素
           }
-      
-          function nextStep() {
-            currentStep++;
-            showStep(currentStep);
-          }
-      
+        }
+    
+        function nextStep() {
+          currentStep++;
           showStep(currentStep);
-      
+        }
+    
+        // 檢查用戶是否已經訪問過網站
+        if (!localStorage.getItem('hasVisited')) {
+          // 設置訪問標記
+          localStorage.setItem('hasVisited', 'true');
+    
+          // 顯示第一步的引導提示
+          showStep(currentStep);
+    
           // 監聽YouTube網址輸入框的輸入事件
           document.getElementById('youtubeUrl').addEventListener('input', function() {
             if (this.value.trim() !== '') {
               nextStep();
             }
           });
-      
+    
           // 監聽音訊文件選擇框的變更事件
           document.getElementById('audioFileInput').addEventListener('change', function() {
             if (this.files.length > 0) {
               nextStep();
             }
           });
-      
+    
           document.getElementById('estimateButton').addEventListener('click', nextStep);
           document.getElementById('uploadButton').addEventListener('click', nextStep);
           document.getElementById('fetchButton').addEventListener('click', nextStep);
           document.getElementById('transcribeButton').addEventListener('click', nextStep);
-        });
+        }
+      });
+
       
     </script>
   </body>
