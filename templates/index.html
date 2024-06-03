@@ -682,12 +682,12 @@
 
     <!-- 引導提示 -->
     <div id="step1" class="step-tooltip" style="display: none; top: 20px; left: 50%;">
-      Step 1: 輸入YouTube網址或選擇音訊檔案(mp3/m4a)上傳
+      Step 1: 輸入YouTube網址 或 選擇檔案
       <div class="step-arrow" style="top: 40px; left: 50%;"></div>
     </div>
 
     <div id="step2" class="step-tooltip" style="display: none; top: 150px; left: 60%;">
-      Step 2: 點選預計消耗或上傳檔案
+      Step 2: 點選預計消耗 或 上傳檔案
       <div class="step-arrow" style="top: 40px; left: 50%;"></div>
     </div>
 
@@ -1365,7 +1365,15 @@
             const rect = targetElement.getBoundingClientRect();
             const tooltip = document.getElementById(`step${step}`);
             tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`; // 在目標元素上方10px
-            tooltip.style.left = `${rect.left + window.scrollX}px`; // 左側對齊目標元素
+            
+            // 根據步驟調整提示框的左側位置
+            if (step === 1) {
+              tooltip.style.left = `${rect.left + window.scrollX}px`; // 左側對齊目標元素
+            } else if (step === 2) {
+              tooltip.style.left = `${rect.left + window.scrollX - 50}px`; // 左移50px以調整位置
+            } else if (step === 3) {
+              tooltip.style.left = `${rect.left + window.scrollX - 50}px`; // 左移50px以調整位置
+            }
           }
         }
     
@@ -1403,7 +1411,7 @@
         }
       });
 
-      
+
     </script>
   </body>
 </html>
