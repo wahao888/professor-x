@@ -1226,5 +1226,5 @@ if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8000) 
 
 
-# 開發階段不使用HTTPS，終端機輸入：
-# export OAUTHLIB_INSECURE_TRANSPORT=1 
+# 開發階段不使用HTTPS，終端機輸入：export OAUTHLIB_INSECURE_TRANSPORT=1 
+# 啟動虛擬環境：source venv/bin/activate
